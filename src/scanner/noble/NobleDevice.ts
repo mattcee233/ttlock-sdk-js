@@ -73,7 +73,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
     return this.busy;
   }
 
-  async connect(timeout: number = 10): Promise<boolean> {
+  async connect(timeout: number = 15): Promise<boolean> {
     if (this.connectable && !this.connected && !this.connecting) {
       if (this.peripheral.state == "connected") {
         this.connected = true;
@@ -84,6 +84,8 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       this.peripheral.connect((error) => {
         if (typeof error != "undefined" && error != null) {
           console.log("Peripheral connect error:", error);
+          this.connected = false;
+          this.connecting = false;
         } else {
           console.log("Peripheral state:", this.peripheral.state);
           if (this.peripheral.state == "connected") {
@@ -97,20 +99,24 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
         await sleep(100);
         timeoutCycles--;
       } while (!this.connected && timeoutCycles > 0 && this.connecting);
-      await sleep(10);
-      if (!this.connected) {
+      
+      if (!this.connected && this.connecting) {
         this.connecting = false;
+        console.log("Connect timed out, canceling...");
         try {
           this.peripheral.cancelConnect();
         } catch (error) { }
         return false;
       }
-      console.log("Device emiting connected");
-      this.emit("connected");
-      return true;
+      
+      if (this.connected) {
+        console.log("Device emiting connected");
+        this.emit("connected");
+        return true;
+      }
     }
     console.log("Peripheral state:", this.peripheral.state);
-    return false;
+    return this.connected;
   }
 
   async disconnect(): Promise<boolean> {
@@ -221,12 +227,13 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
 
   onConnect(error: string) {
     console.log("Peripheral connect triggered");
-    // if (typeof error != "undefined" && error != "" && error != null) {
-    //   this.connected = false;
-    // } else {
-    //   this.connected = true;
-    // }
-    // this.connecting = false;
+    if (typeof error != "undefined" && error != "" && error != null) {
+      this.connected = false;
+      this.connecting = false;
+    } else {
+      this.connected = true;
+      this.connecting = false;
+    }
   }
 
   onDisconnect(error: string) {

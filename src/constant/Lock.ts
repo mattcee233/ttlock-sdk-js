@@ -19,13 +19,18 @@ export enum LockType {
   LOCK_TYPE_V3_CAR = 8,
   /** Electric car lock b.1 */
   LOCK_TYPE_MOBI = 7,
-
-  //    /** Remote control equipment 5.3.10 */
-  //    static LOCK_TYPE_REMOTE_CONTROL_DEVICE:number = 9;
-  //    /** safe lock */
-  //    static LOCK_TYPE_SAFE_LOCK:number = 8;
-  //    /** bicycle lock */
-  //    static LOCK_TYPE_BICYCLE:number = 9;
+  /** Safe lock 8.1 */
+  LOCK_TYPE_SAFE = 8,
+  /** Bicycle lock 9.1 */
+  LOCK_TYPE_BICYCLE = 9,
+  /** Gate lock */
+  LOCK_TYPE_GATE = 10,
+  /** Padlock */
+  LOCK_TYPE_PAD = 11,
+  /** Cylinder lock */
+  LOCK_TYPE_CYLINDER = 12,
+  /** Remote control device */
+  LOCK_TYPE_REMOTE_CONTROL = 13,
 }
 
 export class LockVersion {
@@ -43,6 +48,8 @@ export class LockVersion {
   static lockVersion_Vb: LockVersion = new LockVersion(0x0b, 1, 0x01, 1, 1);
   static lockVersion_V2: LockVersion = new LockVersion(3, 0, 0, 0, 0);
   static lockVersion_V3_car: LockVersion = new LockVersion(5, 3, 7, 1, 1);
+  static lockVersion_Safe: LockVersion = new LockVersion(8, 1, 1, 1, 1);
+  static lockVersion_Bicycle: LockVersion = new LockVersion(9, 1, 1, 1, 1);
 
   private protocolType: number;
   private protocolVersion: number;
@@ -105,6 +112,10 @@ export class LockVersion {
         return LockVersion.lockVersion_Vb;
       case LockType.LOCK_TYPE_V2:
         return LockVersion.lockVersion_V2;
+      case LockType.LOCK_TYPE_SAFE:
+        return LockVersion.lockVersion_Safe;
+      case LockType.LOCK_TYPE_BICYCLE:
+        return LockVersion.lockVersion_Bicycle;
       default:
         return null;
     }
@@ -112,7 +123,13 @@ export class LockVersion {
 
   static getLockType(device: TTDevice): LockType {
     if (device.lockType == LockType.UNKNOWN) {
-      if (device.protocolType == 5 && device.protocolVersion == 3 && device.scene == 7) {
+      if (device.protocolType == 8 && device.protocolVersion == 1) {
+        device.lockType = LockType.LOCK_TYPE_SAFE;
+      }
+      else if (device.protocolType == 9 && device.protocolVersion == 1) {
+        device.lockType = LockType.LOCK_TYPE_BICYCLE;
+      }
+      else if (device.protocolType == 5 && device.protocolVersion == 3 && device.scene == 7) {
         device.lockType = LockType.LOCK_TYPE_V3_CAR;
       }
       else if (device.protocolType == 10 && device.protocolVersion == 1) {

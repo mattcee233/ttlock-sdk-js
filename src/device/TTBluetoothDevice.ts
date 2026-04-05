@@ -96,6 +96,8 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
 
   private async onDeviceDisconnected() {
     this.connected = false;
+    this.waitingForResponse = false;
+    this.responses = [];
     // console.log("TTBluetoothDevice disconnected", this.device?.id);
     this.emit("disconnected");
   }
