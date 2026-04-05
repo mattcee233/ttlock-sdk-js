@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.18
+- Update CheckUserTimeCommand to use 12-character date strings (YYMMDDHHmmss)
+- Fix CheckUserTimeCommand buffer offsets to prevent data overlap
+
 ## 0.3.17
 - Fix connection timeouts and state management in NobleDevice
 - Ensure response buffer is cleared on disconnection in TTBluetoothDevice

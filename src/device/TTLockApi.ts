@@ -654,7 +654,7 @@ export abstract class TTLockApi extends EventEmitter {
     }
   }
 
-  protected async checkUserTime(startDate: string = '0001311400', endDate: string = "9911301400", aesKey?: Buffer): Promise<number> {
+  protected async checkUserTime(startDate: string = '000131140000', endDate: string = "991130140000", aesKey?: Buffer): Promise<number> {
     if (typeof aesKey == "undefined") {
       if (this.privateData.aesKey) {
         aesKey = this.privateData.aesKey;

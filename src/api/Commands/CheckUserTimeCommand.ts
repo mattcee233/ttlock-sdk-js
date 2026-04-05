@@ -18,11 +18,12 @@ export class CheckUserTimeCommand extends Command {
 
   build(): Buffer {
     if (typeof this.uid != "undefined" && this.startDate && this.endDate && typeof this.lockFlagPos != "undefined") {
-      const data = Buffer.alloc(17); //5+5+3+4
+      const data = Buffer.alloc(21); // 6+6+1+4+4
       dateTimeToBuffer(this.startDate).copy(data, 0);
-      data.writeUInt32BE(this.lockFlagPos, 9); // overlap first byte
-      dateTimeToBuffer(this.endDate).copy(data, 5);
-      data.writeUInt32BE(this.uid, 13);
+      dateTimeToBuffer(this.endDate).copy(data, 6);
+      data.writeUInt8(0, 12); // Padding or unknown byte often 0
+      data.writeUInt32BE(this.lockFlagPos, 13);
+      data.writeUInt32BE(this.uid, 17);
       return data;
     }
     return Buffer.from([]);
