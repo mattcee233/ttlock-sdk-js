@@ -73,6 +73,7 @@ export abstract class TTLockApi extends EventEmitter {
   protected autoLockTime: number;
   protected batteryCapacity: number;
   protected rssi: number;
+  protected uniqueid: number;
   protected lightingTime?: number;
   protected remoteUnlock?: ConfigRemoteUnlock.OP_OPEN | ConfigRemoteUnlock.OP_CLOSE;
   protected lockedStatus: LockedStatus;
@@ -97,6 +98,7 @@ export abstract class TTLockApi extends EventEmitter {
     this.lockSound = AudioManage.UNKNOWN;
     this.batteryCapacity = this.device.batteryCapacity;
     this.rssi = this.device.rssi;
+    this.uniqueid = 0;
     this.initialized = false; // just workaround for TypeScript
     this.operationLog = [];
     if (typeof data != "undefined") {
@@ -140,6 +142,9 @@ export abstract class TTLockApi extends EventEmitter {
     this.privateData.pwdInfo = privateData.pwdInfo;
     if (typeof data.operationLog != "undefined") {
       this.operationLog = data.operationLog;
+    }
+    if (typeof data.uniqueid != "undefined") {
+      this.uniqueid = data.uniqueid;
     }
     this.initialized = true;
   }
@@ -700,7 +705,11 @@ export abstract class TTLockApi extends EventEmitter {
       // and we will read a SearchBicycleStatusCommand that is sent right after instead
       if (typeof cmd.getBatteryCapacity != "undefined") {
         this.batteryCapacity = cmd.getBatteryCapacity();
-        return cmd.getUnlockData();
+        const unlockData = cmd.getUnlockData();
+        if (unlockData.uniqueid) {
+          this.uniqueid = unlockData.uniqueid;
+        }
+        return unlockData;
       } else {
         return {}
       }

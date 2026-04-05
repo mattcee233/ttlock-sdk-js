@@ -2,11 +2,11 @@
 
 The goal of this project is to make a partial JavaScript port of the TTLock Android SDK enough to make it work with the biometric locks.  
 
-> This is just an SDK providing the means to communicate with the locks, it is not an app providing the full functionality of the TTLock app. If you are looking for an implementation please see [ttlock-hass-integration](https://github.com/kind3r/hass-addons) Home Assistant Addon.  
+> This is just an SDK providing the means to communicate with the locks, it is not an app providing the full functionality of the TTLock app. If you are looking for an implementation please see [ttlock-hass-integration](https://github.com/mattcee233/ttlock-offline) Home Assistant Addon.  
 
 > Bluetooth implementation is using [@abandonware/noble](https://github.com/abandonware/noble) but other implementations are possible by extending [ScannerInterface](./src/scanner/ScannerInterface.ts)  
 
-Feeling generous and want to support my work, here is [my PayPal link](https://paypal.me/kind3r).  
+
 
 ## Requirements
 - node.js v12 or newer

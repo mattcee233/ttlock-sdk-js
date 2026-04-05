@@ -7,10 +7,10 @@ import { Command } from "../Command";
 
 export interface PassageModeData {
   type: PassageModeType;
-  /** 1..7 (Monday..Sunday) 0: means ervery day */
-  weekOrDay: number;
-  /** month repeat */
-  month: number;
+  /** 1..7 (Monday..Sunday) 0: means ervery day. Can also be a bitmask for multiple days */
+  weekOrDay: number | number[];
+  /** month repeat. Can also be a bitmask for multiple days */
+  month: number | number[];
   /** HHMM 0:0 means all day*/
   startHour: string;
   /** HHMM */
@@ -33,7 +33,7 @@ export class PassageModeCommand extends Command {
         this.dataOut = [];
         let index = 3;
         if (this.commandData.length >= 10) {
-          {
+          do {
             this.dataOut.push({
               type: this.commandData.readInt8(index),
               weekOrDay: this.commandData.readInt8(index + 1),
@@ -50,6 +50,19 @@ export class PassageModeCommand extends Command {
     }
   }
 
+  private daysToBitmask(days: number | number[]): number {
+    if (Array.isArray(days)) {
+      let mask = 0;
+      for (const day of days) {
+        if (day >= 1 && day <= 31) {
+          mask |= (1 << (day - 1));
+        }
+      }
+      return mask;
+    }
+    return days;
+  }
+
   build(): Buffer {
     if (this.opType == PassageModeOperate.QUERY && typeof this.sequence != "undefined") {
       return Buffer.from([this.opType, this.sequence]);
@@ -57,8 +70,8 @@ export class PassageModeCommand extends Command {
       return Buffer.from([
         this.opType,
         this.dataIn.type,
-        this.dataIn.weekOrDay,
-        this.dataIn.month,
+        this.daysToBitmask(this.dataIn.weekOrDay),
+        this.daysToBitmask(this.dataIn.month),
         parseInt(this.dataIn.startHour.substr(0, 2)),
         parseInt(this.dataIn.startHour.substr(2, 2)),
         parseInt(this.dataIn.endHour.substr(0, 2)),

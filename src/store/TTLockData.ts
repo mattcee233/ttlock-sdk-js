@@ -24,6 +24,8 @@ export interface TTLockData {
   lockedStatus: number;
   /** Lock private data */
   privateData: TTLockPrivateData;
+  /** Unique id of the last operation */
+  uniqueid?: number;
   /** Operation Log entries */
   operationLog?: LogEntry[];
 }

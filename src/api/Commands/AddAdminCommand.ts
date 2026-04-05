@@ -10,7 +10,7 @@ export class AddAdminCommand extends Command {
   private unlockKey?: number;
 
   generateNumber(): number {
-    return Math.floor(Math.random() * 100000000);
+    return Math.floor(Math.random() * 900000000) + 100000000;
   }
 
   setAdminPs(adminPassword?: number): number {

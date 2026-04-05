@@ -2,6 +2,7 @@
 
 import moment from "moment";
 import { CommandType } from "../../constant/CommandType";
+import { dateTimeToBuffer } from "../../util/timeUtil";
 import { Command } from "../Command";
 
 export interface UnlockDataInterface {
@@ -41,9 +42,9 @@ export class UnlockCommand extends Command {
 
   build(): Buffer {
     if (this.sum) {
-      const data = Buffer.alloc(8);
+      const data = Buffer.alloc(10);
       data.writeUInt32BE(this.sum, 0);
-      data.writeUInt32BE(moment().unix(), 4);
+      dateTimeToBuffer(moment().format("YYMMDDHHmmss")).copy(data, 4);
       return data;
     }
     return Buffer.from([]);

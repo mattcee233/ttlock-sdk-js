@@ -1,7 +1,7 @@
 'use strict';
 
 import { CommandEnvelope } from "../api/CommandEnvelope";
-import { Fingerprint, ICCard, KeyboardPassCode, LogEntry, PassageModeData } from "../api/Commands";
+import { Fingerprint, ICCard, KeyboardPassCode, LogEntry, PassageModeData, UnlockDataInterface } from "../api/Commands";
 import { CodeSecret } from "../api/Commands/InitPasswordsCommand";
 import { AudioManage } from "../constant/AudioManage";
 import { ConfigRemoteUnlock } from "../constant/ConfigRemoteUnlock";
@@ -320,7 +320,7 @@ export class TTLock extends TTLockApi implements TTLock {
   /**
    * Lock the lock
    */
-  async lock(): Promise<boolean> {
+  async lock(): Promise<UnlockDataInterface | false> {
     if (!this.isConnected()) {
       throw new Error("Lock is not connected");
     }
@@ -338,18 +338,17 @@ export class TTLock extends TTLockApi implements TTLock {
       console.log("========= lock", lockData);
       this.lockedStatus = LockedStatus.LOCKED;
       this.emit("locked", this);
+      return lockData;
     } catch (error) {
       console.error("Error locking the lock", error);
       return false;
     }
-
-    return true;
   }
 
   /**
    * Unlock the lock
    */
-  async unlock(): Promise<boolean> {
+  async unlock(): Promise<UnlockDataInterface | false> {
     if (!this.isConnected()) {
       throw new Error("Lock is not connected");
     }
@@ -374,12 +373,11 @@ export class TTLock extends TTLockApi implements TTLock {
           this.emit("locked", this);
         }, this.autoLockTime * 1000);
       }
+      return unlockData;
     } catch (error) {
       console.error("Error unlocking the lock", error);
       return false;
     }
-
-    return true;
   }
 
   /**
@@ -1460,6 +1458,7 @@ export class TTLock extends TTLockApi implements TTLock {
         autoLockTime: this.autoLockTime ? this.autoLockTime : -1,
         lockedStatus: this.lockedStatus,
         privateData: privateData,
+        uniqueid: this.uniqueid,
         operationLog: this.operationLog
       };
       return data;
@@ -1485,6 +1484,7 @@ export class TTLock extends TTLockApi implements TTLock {
     if (this.privateData.pwdInfo) Reflect.set(privateData, 'pwdInfo', this.privateData.pwdInfo);
     Reflect.set(json, 'privateData', privateData);
     if (this.operationLog) Reflect.set(json, 'operationLog', this.operationLog);
+    if (this.uniqueid) Reflect.set(json, 'uniqueid', this.uniqueid);
 
     if (asObject) {
       return json;
