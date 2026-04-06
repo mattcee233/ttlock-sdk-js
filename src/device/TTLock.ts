@@ -1388,10 +1388,14 @@ export class TTLock extends TTLockApi implements TTLock {
       console.log("Connected to known lock, reading general data");
       try {
         if (typeof this.featureList == "undefined") {
-          // Search device features
-          console.log("========= feature list");
-          this.featureList = await this.searchDeviceFeatureCommand();
-          console.log("========= feature list", this.featureList);
+          // Admin auth required before querying device features on reconnect
+          if (await this.macro_adminLogin()) {
+            console.log("========= feature list");
+            this.featureList = await this.searchDeviceFeatureCommand();
+            console.log("========= feature list", this.featureList);
+          } else {
+            throw new Error("Admin login failed before reading device features");
+          }
         }
 
         // Auto lock time

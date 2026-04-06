@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.5
+- Fix lock disconnecting on reconnect: `onConnected()` now calls `macro_adminLogin()` (COMM_CHECK_ADMIN + COMM_CHECK_RANDOM) before `searchDeviceFeatureCommand()`. On reconnect the lock requires admin re-authentication before accepting commands; skipping it caused the lock to drop the BLE connection.
+
+## 0.4.4
+- Expand communication debug (TTLOCK_DEBUG_COMM=1): log command type names for TX/RX, retry count, wait time, raw hex with length, device info on connect, unsolicited notifications
+- Fix CRC error visibility: bad CRC always logged as console.warn with [CRC ERROR] prefix and 0x notation, indicating if IGNORE_CRC is suppressing the error
+- Import CommandType in TTBluetoothDevice for human-readable command names in debug output
+
 ## 0.4.3
 - Fix MODULE_NOT_FOUND on startup: @stoprocent/noble removed the `with-bindings` sub-path; use `lib/noble` directly to get the Noble constructor for custom bindings
 

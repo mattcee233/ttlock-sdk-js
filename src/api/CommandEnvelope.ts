@@ -69,7 +69,8 @@ export class CommandEnvelope {
     const crc = CodecUtils.crccompute(rawData.slice(0, rawData.length - 1));
     command.crc = rawData.readUInt8(rawData.length - 1);
     if (command.crc != crc) {
-      console.log("Bad CRC should be " + crc + " and we got " + command.crc);
+      const ignored = process.env.TTLOCK_IGNORE_CRC == "1" ? " (proceeding - IGNORE_CRC enabled)" : "";
+      console.warn(`[CRC ERROR] Bad CRC: expected 0x${crc.toString(16).padStart(2, '0').toUpperCase()}, got 0x${command.crc.toString(16).padStart(2, '0').toUpperCase()}${ignored}`);
       command.crcok = false;
     }
     command.generateLockType();
