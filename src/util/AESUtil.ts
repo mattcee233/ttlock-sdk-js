@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "./logger";
+const log = logger.child({ name: 'AESUtil' });
 
 import crypto from "crypto";
 
@@ -55,7 +57,7 @@ export class AESUtil {
 
       return decrypted;
     } catch (error) {
-      console.error(error);
+      log.error(error);
       throw new Error("Decryption failed");
     }
   }

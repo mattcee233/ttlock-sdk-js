@@ -5,6 +5,7 @@ import { CommandType } from "../constant/CommandType";
 import { LockType, LockVersion } from "../constant/Lock";
 import { CharacteristicInterface, DeviceInterface, ServiceInterface } from "../scanner/DeviceInterface";
 import { ScannerInterface } from "../scanner/ScannerInterface";
+import { logger } from "../util/logger";
 import { sleep } from "../util/timingUtil";
 import { TTDevice } from "./TTDevice";
 
@@ -25,6 +26,7 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
   private scanner: ScannerInterface;
   private waitingForResponse: boolean = false;
   private responses: CommandEnvelope[] = [];
+  protected log = logger.child({ name: 'BLE' });
 
   private constructor(scanner: ScannerInterface) {
     super();
@@ -55,6 +57,7 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
         this.parseManufacturerData(this.device.manufacturerData);
       }
     }
+    this.log = logger.child({ name: `BLE/${this.address || this.id || 'unknown'}` });
 
     this.emit("updated");
   }
@@ -63,35 +66,27 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
     if (typeof this.device != "undefined" && this.device.connectable) {
       // stop scan
       await this.scanner.stopScan();
-      if (process.env.TTLOCK_DEBUG_COMM == "1") {
-        console.log(`[COMM] Initiating BLE connection: ${this.address || this.id}`);
-      }
+      this.log.info('Initiating BLE connection');
       if (await this.device.connect()) {
         // TODO: something happens here (disconnect) and it's stuck in limbo
-        console.log("BLE Device reading basic info");
+        this.log.debug('Reading device info');
         await this.readBasicInfo();
-        console.log("BLE Device read basic info");
-        if (process.env.TTLOCK_DEBUG_COMM == "1") {
-          console.log(`[COMM] Device info: name="${this.name}", fw="${this.firmware}", mfr="${this.manufacturer}", model="${this.model}", lockType=${LockType[this.lockType]}`);
-        }
+        this.log.debug({ name: this.name, fw: this.firmware, mfr: this.manufacturer, model: this.model, lockType: LockType[this.lockType] }, 'Device info');
         const subscribed = await this.subscribe();
-        console.log("BLE Device subscribed");
         if (!subscribed) {
           await this.device.disconnect();
           return false;
         } else {
           this.connected = true;
-          if (process.env.TTLOCK_DEBUG_COMM == "1") {
-            console.log(`[COMM] BLE connection ready: ${this.address || this.id} ("${this.name}"), lockType=${LockType[this.lockType]}, fw=${this.firmware}`);
-          }
+          this.log.info({ name: this.name, lockType: LockType[this.lockType], fw: this.firmware }, 'BLE connection ready');
           this.emit("connected");
           return true;
         }
       } else {
-        console.log("Connect failed");
+        this.log.warn('BLE connect failed');
       }
     } else {
-      console.log("Missing device or not connectable");
+      this.log.warn('Cannot connect: missing device or peripheral not connectable');
     }
     return false;
   }
@@ -114,26 +109,22 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
 
   private async readBasicInfo() {
     if (typeof this.device != "undefined") {
-      console.log("BLE Device discover services start");
+      this.log.debug('Discovering BLE services');
       await this.device.discoverServices();
-      console.log("BLE Device discover services end");
+      this.log.debug('BLE services discovered');
       // update some basic information
       let service: ServiceInterface | undefined;
       if (this.device.services.has("1800")) {
         service = this.device.services.get("1800");
         if (typeof service != "undefined") {
-          console.log("BLE Device read characteristics start");
           await service.readCharacteristics();
-          console.log("BLE Device read characteristics end");
           this.putCharacteristicValue(service, "2a00", "name");
         }
       }
       if (this.device.services.has("180a")) {
         service = this.device.services.get("180a");
         if (typeof service != "undefined") {
-          console.log("BLE Device read characteristics start");
           await service.readCharacteristics();
-          console.log("BLE Device read characteristics end");
           this.putCharacteristicValue(service, "2a29", "manufacturer");
           this.putCharacteristicValue(service, "2a24", "model");
           this.putCharacteristicValue(service, "2a27", "hardware");
@@ -191,10 +182,8 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
       if (typeof service != undefined) {
         const characteristic = service?.characteristics.get("fff2");
         if (typeof characteristic != "undefined") {
-          if (process.env.TTLOCK_DEBUG_COMM == "1") {
-            const txTypeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
-            console.log(`[COMM >>> TX] ${txTypeName} -> ${this.address || this.id}`);
-          }
+          const txTypeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
+          this.log.debug({ cmd: txTypeName }, 'TX →');
           if (waitForResponse) {
             let retry = 0;
             let crcs: number[] = [];
@@ -202,10 +191,8 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
             this.waitingForResponse = true;
             do {
               if (retry > 0) {
-                if (process.env.TTLOCK_DEBUG_COMM == "1") {
-                  const retryTypeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
-                  console.log(`[COMM] Retry ${retry}/2 for ${retryTypeName} on ${this.address || this.id}`);
-                }
+                const retryTypeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
+                this.log.debug({ cmd: retryTypeName, attempt: retry }, 'TX retry');
                 await sleep(200);
               }
               const written = await this.writeCharacteristic(characteristic, data);
@@ -229,11 +216,9 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
               response = this.responses.pop();
               if (typeof response != "undefined") {
                 crcs.push(response.getCrc());
-                if (process.env.TTLOCK_DEBUG_COMM == "1") {
-                  const rxTypeName = CommandType[response.getCommandType()] || `0x${response.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
-                  const crcStatus = response.isCrcOk() ? 'OK' : `BAD (0x${response.getCrc().toString(16).padStart(2, '0').toUpperCase()})`;
-                  console.log(`[COMM <<< RX] ${rxTypeName} <- ${this.address || this.id}, CRC: ${crcStatus}, waited ~${cycles * 5}ms`);
-                }
+                const rxTypeName = CommandType[response.getCommandType()] || `0x${response.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
+                const crcStatus = response.isCrcOk() ? 'OK' : `BAD(0x${response.getCrc().toString(16).padStart(2, '0').toUpperCase()})`;
+                this.log.debug({ cmd: rxTypeName, crc: crcStatus, waitMs: cycles * 5 }, '← RX');
               }
               retry++;
             } while (typeof response == "undefined" || (!response.isCrcOk() && !ignoreCrc && retry <= 2));
@@ -270,14 +255,14 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
     let response: CommandEnvelope | undefined;
     this.waitingForResponse = true;
 
-    console.log("Waiting for response");
+    this.log.debug('Waiting for unsolicited response');
     let cycles = 0;
     const sleepPerCycle = 100;
     while (this.responses.length == 0 && cycles * sleepPerCycle < timeout) {
       cycles++;
       await sleep(sleepPerCycle);
     }
-    console.log("Waited for a response for", cycles, "=", cycles * sleepPerCycle, "ms");
+    this.log.debug({ waitMs: cycles * sleepPerCycle }, 'Unsolicited response wait complete');
 
     if (this.responses.length > 0) {
       response = this.responses.pop();
@@ -287,9 +272,7 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
   }
 
   private async writeCharacteristic(characteristic: CharacteristicInterface, data: Buffer): Promise<boolean> {
-    if (process.env.TTLOCK_DEBUG_COMM == "1") {
-      console.log(`[COMM TX RAW] ${this.address || this.id}: ${data.toString("hex")} (${data.length} bytes)`);
-    }
+    this.log.trace({ hex: data.toString('hex'), bytes: data.length }, 'TX raw');
     let index = 0;
     do {
       const remaining = data.length - index;
@@ -314,29 +297,24 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
       const ending = this.incomingDataBuffer.subarray(this.incomingDataBuffer.length - 2);
       if (ending.toString("hex") == CRLF) {
         // we have a command response
-        if (process.env.TTLOCK_DEBUG_COMM == "1") {
-          console.log(`[COMM RX RAW] ${this.address || this.id}: ${this.incomingDataBuffer.toString("hex")} (${this.incomingDataBuffer.length} bytes)`);
-        }
+        this.log.trace({ hex: this.incomingDataBuffer.toString('hex'), bytes: this.incomingDataBuffer.length }, 'RX raw');
         try {
           const command = CommandEnvelope.createFromRawData(this.incomingDataBuffer.subarray(0, this.incomingDataBuffer.length - 2));
           if (this.waitingForResponse) {
             this.responses.push(command);
           } else {
             // unsolicited notification (e.g. lock/unlock event from button press)
+            const typeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
             if (command.isCrcOk()) {
-              if (process.env.TTLOCK_DEBUG_COMM == "1") {
-                const typeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
-                console.log(`[COMM <<< NOTIFY] ${typeName} from ${this.address || this.id}, CRC: OK`);
-              }
+              this.log.debug({ cmd: typeName }, 'NOTIFY');
               this.emit("dataReceived", command);
-            } else if (process.env.TTLOCK_DEBUG_COMM == "1") {
-              const typeName = CommandType[command.getCommandType()] || `0x${command.getCommandType().toString(16).padStart(2, '0').toUpperCase()}`;
-              console.log(`[COMM <<< NOTIFY DISCARDED] ${typeName} from ${this.address || this.id}, CRC: BAD`);
+            } else {
+              this.log.debug({ cmd: typeName }, 'NOTIFY discarded (bad CRC)');
             }
           }
         } catch (error) {
           // TODO: in case of a malformed response we should notify the waiting cycle and stop waiting
-          console.error(error);
+          this.log.error(error);
         }
         this.incomingDataBuffer = Buffer.from([]);
       }

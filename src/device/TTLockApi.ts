@@ -11,6 +11,8 @@ import { defaultAESKey } from "../util/AESUtil";
 import { DeviceInfoType } from "./DeviceInfoType";
 import { PrivateDataType } from "./PrivateDataType";
 import { TTBluetoothDevice } from "./TTBluetoothDevice";
+import { logger } from "../util/logger";
+const log = logger.child({ name: 'TTLockApi' });
 import {
   AddAdminCommand, AESKeyCommand, AudioManageCommand,
   InitPasswordsCommand, ScreenPasscodeManageCommand, SetAdminKeyboardPwdCommand,
@@ -127,7 +129,7 @@ export abstract class TTLockApi extends EventEmitter {
     }
 
     if (paramsChanged.batteryCapacity || paramsChanged.lockedStatus || paramsChanged.newEvents) {
-      console.log("Emmiting paramsChanged", paramsChanged);
+      log.debug("Emmiting paramsChanged", paramsChanged);
       this.emit("updated", this, paramsChanged);
     }
   }
@@ -210,7 +212,7 @@ export abstract class TTLockApi extends EventEmitter {
       adminPs: addAdminCommand.setAdminPs(),
       unlockKey: addAdminCommand.setUnlockKey(),
     }
-    console.log("Setting adminPs", admin.adminPs, "and unlockKey", admin.unlockKey);
+    log.debug("Setting adminPs", admin.adminPs, "and unlockKey", admin.unlockKey);
     const responseEnvelope = await this.device.sendCommand(requestEnvelope);
     if (responseEnvelope) {
       responseEnvelope.setAesKey(aesKey);
@@ -433,7 +435,7 @@ export abstract class TTLockApi extends EventEmitter {
       for (let i = 0; i < 7; i++) {
         adminPasscode += (Math.floor(Math.random() * 10)).toString();
       }
-      console.log("Generated adminPasscode:", adminPasscode);
+      log.debug("Generated adminPasscode:", adminPasscode);
     }
     const requestEnvelope = CommandEnvelope.createFromLockType(this.device.lockType, aesKey);
     requestEnvelope.setCommandType(CommandType.COMM_SET_ADMIN_KEYBOARD_PWD);
@@ -473,7 +475,7 @@ export abstract class TTLockApi extends EventEmitter {
         responseEnvelope.setAesKey(aesKey);
         cmd = responseEnvelope.getCommand() as InitPasswordsCommand;
         if (cmd.getResponse() != CommandResponse.SUCCESS) {
-          console.error(pwdInfo);
+          log.error(pwdInfo);
           throw new Error("Failed to init passwords");
         }
         return pwdInfo;
@@ -567,7 +569,7 @@ export abstract class TTLockApi extends EventEmitter {
       responseEnvelope.setAesKey(aesKey);
       cmd = responseEnvelope.getCommand() as ReadDeviceInfoCommand;
       if (cmd.getResponse() != CommandResponse.SUCCESS) {
-        console.error("Failed deviceInfo response");
+        log.error("Failed deviceInfo response");
         // throw new Error("Failed deviceInfo response");
       }
       const infoData = cmd.getInfoData();
@@ -1357,20 +1359,20 @@ export abstract class TTLockApi extends EventEmitter {
       return true;
     }
     try {
-      console.log("========= check admin");
+      log.debug("========= check admin");
       const psFromLock = await this.checkAdminCommand();
-      console.log("========= check admin:", psFromLock);
+      log.debug("========= check admin:", psFromLock);
       if (psFromLock > 0) {
-        console.log("========= check random");
+        log.debug("========= check random");
         await this.checkRandomCommand(psFromLock);
-        console.log("========= check random");
+        log.debug("========= check random");
         this.adminAuth = true;
         return true;
       } else {
-        console.error("Invalid psFromLock received", psFromLock);
+        log.error("Invalid psFromLock received", psFromLock);
       }
     } catch (error) {
-      console.error("macro_adminLogin:", error);
+      log.error("macro_adminLogin:", error);
     }
     return false;
   }

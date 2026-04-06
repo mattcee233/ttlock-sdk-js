@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/Device' });
 
 import { DeviceInterface, ServiceInterface } from "../DeviceInterface";
 import { Peripheral, Service } from "@stoprocent/noble";
@@ -80,14 +82,14 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
         return true;
       }
       this.connecting = true;
-      console.log("Peripheral connect start");
+      log.debug("Peripheral connect start");
       this.peripheral.connect((error) => {
         if (typeof error != "undefined" && error != null) {
-          console.log("Peripheral connect error:", error);
+          log.debug("Peripheral connect error:", error);
           this.connected = false;
           this.connecting = false;
         } else {
-          console.log("Peripheral state:", this.peripheral.state);
+          log.debug("Peripheral state:", this.peripheral.state);
           if (this.peripheral.state == "connected") {
             this.connected = true;
             this.connecting = false;
@@ -102,7 +104,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       
       if (!this.connected && this.connecting) {
         this.connecting = false;
-        console.log("Connect timed out, canceling...");
+        log.debug("Connect timed out, canceling...");
         try {
           this.peripheral.cancelConnect();
         } catch (error) { }
@@ -110,12 +112,12 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       }
       
       if (this.connected) {
-        console.log("Device emiting connected");
+        log.debug("Device emiting connected");
         this.emit("connected");
         return true;
       }
     }
-    console.log("Peripheral state:", this.peripheral.state);
+    log.debug("Peripheral state:", this.peripheral.state);
     return this.connected;
   }
 
@@ -125,7 +127,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
         await this.peripheral.disconnectAsync();
         return true;
       } catch (error) {
-        console.error(error);
+        log.error(error);
         return false;
       }
     }
@@ -151,7 +153,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       });
       return this.services;
     } catch (error) {
-      console.error(error);
+      log.error(error);
       this.resetBusy();
       return new Map();
     }
@@ -190,7 +192,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       }
       return this.services;
     } catch (error) {
-      console.error(error);
+      log.error(error);
       this.resetBusy();
       return new Map();
     }
@@ -210,23 +212,23 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       for (let [uuid, service] of this.services) {
         for (let [uuid, characteristic] of service.characteristics) {
           if (characteristic.properties.includes("read")) {
-            console.log("Reading", uuid);
+            log.debug("Reading", uuid);
             const data = await characteristic.read();
             if (typeof data != "undefined") {
-              console.log("Data", data.toString("ascii"));
+              log.debug("Data", data.toString("ascii"));
             }
           }
         }
       }
       return true;
     } catch (error) {
-      console.error(error);
+      log.error(error);
       return false;
     }
   }
 
   onConnect(error: string) {
-    console.log("Peripheral connect triggered");
+    log.debug("Peripheral connect triggered");
     if (typeof error != "undefined" && error != "" && error != null) {
       this.connected = false;
       this.connecting = false;

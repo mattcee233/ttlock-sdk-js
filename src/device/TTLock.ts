@@ -13,6 +13,7 @@ import { PassageModeOperate } from "../constant/PassageModeOperate";
 import { TTLockData, TTLockPrivateData } from "../store/TTLockData";
 import { sleep } from "../util/timingUtil";
 import { TTBluetoothDevice } from "./TTBluetoothDevice";
+import { logger } from "../util/logger";
 import { LockParamsChanged, TTLockApi } from "./TTLockApi";
 
 export interface TTLock {
@@ -35,6 +36,7 @@ export interface TTLock {
 export class TTLock extends TTLockApi implements TTLock {
   private connected: boolean;
   private skipDataRead: boolean = false;
+  private get log() { return logger.child({ name: `Lock/${this.device?.address || 'unknown'}` }); }
   private connecting: boolean = false;
 
   constructor(device: TTBluetoothDevice, data?: TTLockData) {
@@ -77,7 +79,7 @@ export class TTLock extends TTLockApi implements TTLock {
 
   async connect(skipDataRead: boolean = false, timeout: number = 15): Promise<boolean> {
     if (this.connecting) {
-      console.log("Connect allready in progress");
+      this.log.warn("Connect already in progress");
       return false;
     }
     if (this.connected) {
@@ -88,13 +90,13 @@ export class TTLock extends TTLockApi implements TTLock {
     const connected = await this.device.connect();
     let timeoutCycles = timeout * 10;
     if (connected) {
-      console.log("Lock waiting for connection to be completed");
+      this.log.debug("Waiting for connection to complete");
       do {
         await sleep(100);
         timeoutCycles--;
       } while (!this.connected && timeoutCycles > 0 && this.connecting);
     } else {
-      console.log("Lock connect failed");
+      this.log.warn("Lock connect failed");
     }
     this.skipDataRead = false;
     this.connecting = false;
@@ -178,35 +180,35 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       // Init
-      console.log("========= init");
+      this.log.debug("init");
       await this.initCommand();
-      console.log("========= init");
+      this.log.debug("init");
 
       // Get AES key
-      console.log("========= AES key");
+      this.log.debug("AES key");
       const aesKey = await this.getAESKeyCommand();
-      console.log("========= AES key:", aesKey.toString("hex"));
+      this.log.debug("AES key: %o", aesKey.toString("hex"));
 
       // Add admin
-      console.log("========= admin");
+      this.log.debug("admin");
       const admin = await this.addAdminCommand(aesKey);
-      console.log("========= admin:", admin);
+      this.log.debug("admin: %o", admin);
 
       // Calibrate time
       // this seems to fail on some locks
       // see https://github.com/kind3r/hass-addons/issues/11
       try {
-        console.log("========= time");
+        this.log.debug("time");
         await this.calibrateTimeCommand(aesKey);
-        console.log("========= time");
+        this.log.debug("time");
       } catch (error) {
-        console.error(error);
+        this.log.error(error, "Unexpected error");
       }
 
       // Search device features
-      console.log("========= feature list");
+      this.log.debug("feature list");
       const featureList = await this.searchDeviceFeatureCommand(aesKey);
-      console.log("========= feature list", featureList);
+      this.log.debug("feature list %o", featureList);
 
       let switchState: any,
         lockSound: AudioManage.TURN_ON | AudioManage.TURN_OFF | undefined,
@@ -221,66 +223,66 @@ export class TTLock extends TTLockApi implements TTLock {
       // if (featureList.has(FeatureValue.RESET_BUTTON)
       //   || featureList.has(FeatureValue.TAMPER_ALERT)
       //   || featureList.has(FeatureValue.PRIVACK_LOCK)) {
-      //   console.log("========= switchState");
+      //   this.log.debug("switchState");
       //   switchState = await this.getSwitchStateCommand(undefined, aesKey);
-      //   console.log("========= switchState:", switchState);
+      //   this.log.debug("switchState: %o", switchState);
       // }
       if (featureList.has(FeatureValue.AUDIO_MANAGEMENT)) {
-        console.log("========= lockSound");
+        this.log.debug("lockSound");
         try {
           lockSound = await this.audioManageCommand(undefined, aesKey);
         } catch (error) {
           // this sometimes fails
-          console.error(error);
+          this.log.error(error, "Unexpected error");
         }
-        console.log("========= lockSound:", lockSound);
+        this.log.debug("lockSound: %o", lockSound);
       }
       if (featureList.has(FeatureValue.PASSWORD_DISPLAY_OR_HIDE)) {
-        console.log("========= displayPasscode");
+        this.log.debug("displayPasscode");
         displayPasscode = await this.screenPasscodeManageCommand(undefined, aesKey);
-        console.log("========= displayPasscode:", displayPasscode);
+        this.log.debug("displayPasscode: %o", displayPasscode);
       }
       if (featureList.has(FeatureValue.AUTO_LOCK)) {
-        console.log("========= autoLockTime");
+        this.log.debug("autoLockTime");
         autoLockTime = await this.searchAutoLockTimeCommand(undefined, aesKey);
-        console.log("========= autoLockTime:", autoLockTime);
+        this.log.debug("autoLockTime: %o", autoLockTime);
       }
       // if (featureList.has(FeatureValue.LAMP)) {
-      //   console.log("========= lightingTime");
+      //   this.log.debug("lightingTime");
       //   lightingTime = await this.controlLampCommand(undefined, aesKey);
-      //   console.log("========= lightingTime:", lightingTime);
+      //   this.log.debug("lightingTime: %o", lightingTime);
       // }
       if (featureList.has(FeatureValue.GET_ADMIN_CODE)) {
         // Command.COMM_GET_ADMIN_CODE
-        console.log("========= getAdminCode");
+        this.log.debug("getAdminCode");
         adminPasscode = await this.getAdminCodeCommand(aesKey);
-        console.log("========= getAdminCode", adminPasscode);
+        this.log.debug("getAdminCode %o", adminPasscode);
         if (adminPasscode == "") {
-          console.log("========= set adminPasscode");
+          this.log.debug("set adminPasscode");
           adminPasscode = await this.setAdminKeyboardPwdCommand(undefined, aesKey);
-          console.log("========= set adminPasscode:", adminPasscode);
+          this.log.debug("set adminPasscode: %o", adminPasscode);
         }
       } else if (this.device.lockType == LockType.LOCK_TYPE_V3_CAR) {
         // Command.COMM_GET_ALARM_ERRCORD_OR_OPERATION_FINISHED
       } else if (this.device.lockType == LockType.LOCK_TYPE_V3) {
-        console.log("========= set adminPasscode");
+        this.log.debug("set adminPasscode");
         adminPasscode = await this.setAdminKeyboardPwdCommand(undefined, aesKey);
-        console.log("========= set adminPasscode:", adminPasscode);
+        this.log.debug("set adminPasscode: %o", adminPasscode);
       }
 
-      // console.log("========= init passwords");
+      // this.log.debug("init passwords");
       // pwdInfo = await this.initPasswordsCommand(aesKey);
-      // console.log("========= init passwords:", pwdInfo);
+      // this.log.debug("init passwords: %o", pwdInfo);
 
       if (featureList.has(FeatureValue.CONFIG_GATEWAY_UNLOCK)) {
-        console.log("========= remoteUnlock");
+        this.log.debug("remoteUnlock");
         remoteUnlock = await this.controlRemoteUnlockCommand(undefined, aesKey);
-        console.log("========= remoteUnlock:", remoteUnlock);
+        this.log.debug("remoteUnlock: %o", remoteUnlock);
       }
 
-      console.log("========= finished");
+      this.log.debug("finished");
       await this.operateFinishedCommand(aesKey);
-      console.log("========= finished");
+      this.log.debug("finished");
 
       // save all the data we gathered during init sequence
       if (aesKey) this.privateData.aesKey = Buffer.from(aesKey);
@@ -297,17 +299,17 @@ export class TTLock extends TTLockApi implements TTLock {
       this.lockedStatus = LockedStatus.LOCKED; // always locked by default
 
       // read device information
-      console.log("========= device info");
+      this.log.debug("device info");
       try {
         this.deviceInfo = await this.macro_readAllDeviceInfo(aesKey);
       } catch (error) {
         // this sometimes fails
-        console.error(error);
+        this.log.error(error, "Unexpected error");
       }
-      console.log("========= device info:", this.deviceInfo);
+      this.log.debug("device info: %o", this.deviceInfo);
 
     } catch (error) {
-      console.error("Error while initialising lock", error);
+      this.log.error({ err: error }, "Error while initialising lock");
       return false;
     }
 
@@ -330,17 +332,17 @@ export class TTLock extends TTLockApi implements TTLock {
     }
 
     try {
-      console.log("========= check user time");
+      this.log.debug("check user time");
       const psFromLock = await this.checkUserTime();
-      console.log("========= check user time", psFromLock);
-      console.log("========= lock");
+      this.log.debug("check user time %o", psFromLock);
+      this.log.debug("lock");
       const lockData = await this.lockCommand(psFromLock);
-      console.log("========= lock", lockData);
+      this.log.debug("lock %o", lockData);
       this.lockedStatus = LockedStatus.LOCKED;
       this.emit("locked", this);
       return lockData;
     } catch (error) {
-      console.error("Error locking the lock", error);
+      this.log.error({ err: error }, "Error locking the lock");
       return false;
     }
   }
@@ -358,12 +360,12 @@ export class TTLock extends TTLockApi implements TTLock {
     }
 
     try {
-      console.log("========= check user time");
+      this.log.debug("check user time");
       const psFromLock = await this.checkUserTime();
-      console.log("========= check user time", psFromLock);
-      console.log("========= unlock");
+      this.log.debug("check user time %o", psFromLock);
+      this.log.debug("unlock");
       const unlockData = await this.unlockCommand(psFromLock);
-      console.log("========= unlock", unlockData);
+      this.log.debug("unlock %o", unlockData);
       this.lockedStatus = LockedStatus.UNLOCKED;
       this.emit("unlocked", this);
       // if autolock is on, then emit locked event after the timeout has passed
@@ -375,7 +377,7 @@ export class TTLock extends TTLockApi implements TTLock {
       }
       return unlockData;
     } catch (error) {
-      console.error("Error unlocking the lock", error);
+      this.log.error({ err: error }, "Error unlocking the lock");
       return false;
     }
   }
@@ -396,11 +398,11 @@ export class TTLock extends TTLockApi implements TTLock {
       }
 
       try {
-        console.log("========= check lock status");
+        this.log.debug("check lock status");
         this.lockedStatus = await this.searchBycicleStatusCommand();
-        console.log("========= check lock status", this.lockedStatus);
+        this.log.debug("check lock status %o", this.lockedStatus);
       } catch (error) {
-        console.error("Error getting lock status", error);
+        this.log.error({ err: error }, "Error getting lock status");
       }
 
     }
@@ -432,12 +434,12 @@ export class TTLock extends TTLockApi implements TTLock {
 
           try {
             if (await this.macro_adminLogin()) {
-              console.log("========= autoLockTime");
+              this.log.debug("autoLockTime");
               this.autoLockTime = await this.searchAutoLockTimeCommand();
-              console.log("========= autoLockTime:", this.autoLockTime);
+              this.log.debug("autoLockTime: %o", this.autoLockTime);
             }
           } catch (error) {
-            console.error(error);
+            this.log.error(error, "Unexpected error");
           }
         }
       }
@@ -464,15 +466,15 @@ export class TTLock extends TTLockApi implements TTLock {
         if (this.featureList.has(FeatureValue.AUTO_LOCK)) {
           try {
             if (await this.macro_adminLogin()) {
-              console.log("========= autoLockTime");
+              this.log.debug("autoLockTime");
               await this.searchAutoLockTimeCommand(autoLockTime);
-              console.log("========= autoLockTime");
+              this.log.debug("autoLockTime");
               this.autoLockTime = autoLockTime;
               this.emit("dataUpdated", this);
               return true;
             }
           } catch (error) {
-            console.error(error);
+            this.log.error(error, "Unexpected error");
           }
         }
       }
@@ -495,12 +497,12 @@ export class TTLock extends TTLockApi implements TTLock {
         }
 
         try {
-          console.log("========= lockSound");
+          this.log.debug("lockSound");
           this.lockSound = await this.audioManageCommand();
-          console.log("========= lockSound:", this.lockSound);
+          this.log.debug("lockSound: %o", this.lockSound);
 
         } catch (error) {
-          console.error("Error getting lock sound status", error);
+          this.log.error({ err: error }, "Error getting lock sound status");
         }
       }
     }
@@ -525,14 +527,14 @@ export class TTLock extends TTLockApi implements TTLock {
       if (typeof this.featureList != "undefined" && this.featureList.has(FeatureValue.AUDIO_MANAGEMENT)) {
         try {
           if (await this.macro_adminLogin()) {
-            console.log("========= lockSound");
+            this.log.debug("lockSound");
             this.lockSound = await this.audioManageCommand(lockSound);
-            console.log("========= lockSound:", this.lockSound);
+            this.log.debug("lockSound: %o", this.lockSound);
             this.emit("dataUpdated", this);
             return true;
           }
         } catch (error) {
-          console.error(error);
+          this.log.error(error, "Unexpected error");
         }
       }
     }
@@ -551,14 +553,14 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= reset");
+        this.log.debug("reset");
         await this.resetLockCommand();
-        console.log("========= reset");
+        this.log.debug("reset");
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while reseting the lock", error);
+      this.log.error({ err: error }, "Error while reseting the lock");
       return false;
     }
 
@@ -582,9 +584,9 @@ export class TTLock extends TTLockApi implements TTLock {
       if (await this.macro_adminLogin()) {
         let sequence = 0;
         do {
-          console.log("========= get passage mode");
+          this.log.debug("get passage mode");
           const response = await this.getPassageModeCommand(sequence);
-          console.log("========= get passage mode", response);
+          this.log.debug("get passage mode %o", response);
           sequence = response.sequence;
           response.data.forEach((passageData) => {
             data.push(passageData);
@@ -592,7 +594,7 @@ export class TTLock extends TTLockApi implements TTLock {
         } while (sequence != -1);
       }
     } catch (error) {
-      console.error("Error while getting passage mode", error);
+      this.log.error({ err: error }, "Error while getting passage mode");
     }
 
     return data;
@@ -609,14 +611,14 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= set passage mode");
+        this.log.debug("set passage mode");
         await this.setPassageModeCommand(data);
-        console.log("========= set passage mode");
+        this.log.debug("set passage mode");
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while getting passage mode", error);
+      this.log.error({ err: error }, "Error while getting passage mode");
       return false;
     }
 
@@ -634,12 +636,12 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= delete passage mode");
+        this.log.debug("delete passage mode");
         await this.setPassageModeCommand(data, PassageModeOperate.DELETE);
-        console.log("========= delete passage mode");
+        this.log.debug("delete passage mode");
       }
     } catch (error) {
-      console.error("Error while deleting passage mode", error);
+      this.log.error({ err: error }, "Error while deleting passage mode");
       return false;
     }
 
@@ -657,14 +659,14 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= clear passage mode");
+        this.log.debug("clear passage mode");
         await this.clearPassageModeCommand();
-        console.log("========= clear passage mode");
+        this.log.debug("clear passage mode");
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while deleting passage mode", error);
+      this.log.error({ err: error }, "Error while deleting passage mode");
       return false;
     }
 
@@ -693,15 +695,15 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= add passCode");
+        this.log.debug("add passCode");
         const result = await this.createCustomPasscodeCommand(type, passCode, startDate, endDate);
-        console.log("========= add passCode", result);
+        this.log.debug("add passCode %o", result);
         return result;
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while adding passcode", error);
+      this.log.error({ err: error }, "Error while adding passcode");
       return false;
     }
   }
@@ -729,15 +731,15 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= update passCode");
+        this.log.debug("update passCode");
         const result = await this.updateCustomPasscodeCommand(type, oldPassCode, newPassCode, startDate, endDate);
-        console.log("========= update passCode", result);
+        this.log.debug("update passCode %o", result);
         return result;
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while updating passcode", error);
+      this.log.error({ err: error }, "Error while updating passcode");
       return false;
     }
   }
@@ -762,15 +764,15 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= delete passCode");
+        this.log.debug("delete passCode");
         const result = await this.deleteCustomPasscodeCommand(type, passCode);
-        console.log("========= delete passCode", result);
+        this.log.debug("delete passCode %o", result);
         return result;
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while deleting passcode", error);
+      this.log.error({ err: error }, "Error while deleting passcode");
       return false;
     }
   }
@@ -793,15 +795,15 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= clear passCodes");
+        this.log.debug("clear passCodes");
         const result = await this.clearCustomPasscodesCommand();
-        console.log("========= clear passCodes", result);
+        this.log.debug("clear passCodes %o", result);
         return result;
       } else {
         return false;
       }
     } catch (error) {
-      console.error("Error while clearing passcodes", error);
+      this.log.error({ err: error }, "Error while clearing passcodes");
       return false;
     }
   }
@@ -828,9 +830,9 @@ export class TTLock extends TTLockApi implements TTLock {
       if (await this.macro_adminLogin()) {
         let sequence = 0;
         do {
-          console.log("========= get passCodes", sequence);
+          this.log.debug("get passCodes %o", sequence);
           const response = await this.getCustomPasscodesCommand(sequence);
-          console.log("========= get passCodes", response);
+          this.log.debug("get passCodes %o", response);
           sequence = response.sequence;
           response.data.forEach((passageData) => {
             data.push(passageData);
@@ -838,7 +840,7 @@ export class TTLock extends TTLockApi implements TTLock {
         } while (sequence != -1);
       }
     } catch (error) {
-      console.error("Error while getting passCodes", error);
+      this.log.error({ err: error }, "Error while getting passCodes");
     }
 
     return data;
@@ -868,20 +870,20 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= add IC Card");
+        this.log.debug("add IC Card");
         if (typeof cardNumber != "undefined") {
           const addedCardNumber = await this.addICCommand(cardNumber, startDate, endDate);
-          console.log("========= add IC Card", addedCardNumber);
+          this.log.debug("add IC Card %o", addedCardNumber);
         } else {
           const addedCardNumber = await this.addICCommand();
-          console.log("========= updating IC Card", addedCardNumber);
+          this.log.debug("updating IC Card %o", addedCardNumber);
           const response = await this.updateICCommand(addedCardNumber, startDate, endDate);
-          console.log("========= updating IC Card", response);
+          this.log.debug("updating IC Card %o", response);
           data = addedCardNumber;
         }
       }
     } catch (error) {
-      console.error("Error while adding IC Card", error);
+      this.log.error({ err: error }, "Error while adding IC Card");
     }
 
     return data;
@@ -910,13 +912,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= updating IC Card", cardNumber);
+        this.log.debug("updating IC Card %o", cardNumber);
         const response = await this.updateICCommand(cardNumber, startDate, endDate);
-        console.log("========= updating IC Card", response);
+        this.log.debug("updating IC Card %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while updating IC Card", error);
+      this.log.error({ err: error }, "Error while updating IC Card");
     }
 
     return data;
@@ -943,13 +945,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= updating IC Card", cardNumber);
+        this.log.debug("updating IC Card %o", cardNumber);
         const response = await this.deleteICCommand(cardNumber);
-        console.log("========= updating IC Card", response);
+        this.log.debug("updating IC Card %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while adding IC Card", error);
+      this.log.error({ err: error }, "Error while adding IC Card");
     }
 
     return data;
@@ -975,13 +977,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= clearing IC Cards");
+        this.log.debug("clearing IC Cards");
         const response = await this.clearICCommand();
-        console.log("========= clearing IC Cards", response);
+        this.log.debug("clearing IC Cards %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while clearing IC Cards", error);
+      this.log.error({ err: error }, "Error while clearing IC Cards");
     }
 
     return data;
@@ -1009,9 +1011,9 @@ export class TTLock extends TTLockApi implements TTLock {
       if (await this.macro_adminLogin()) {
         let sequence = 0;
         do {
-          console.log("========= get IC Cards", sequence);
+          this.log.debug("get IC Cards %o", sequence);
           const response = await this.getICCommand(sequence);
-          console.log("========= get IC Cards", response);
+          this.log.debug("get IC Cards %o", response);
           sequence = response.sequence;
           response.data.forEach((card) => {
             data.push(card);
@@ -1019,7 +1021,7 @@ export class TTLock extends TTLockApi implements TTLock {
         } while (sequence != -1);
       }
     } catch (error) {
-      console.error("Error while getting IC Cards", error);
+      this.log.error({ err: error }, "Error while getting IC Cards");
     }
 
     return data;
@@ -1048,15 +1050,15 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= add Fingerprint");
+        this.log.debug("add Fingerprint");
         const fpNumber = await this.addFRCommand();
-        console.log("========= updating Fingerprint", fpNumber);
+        this.log.debug("updating Fingerprint %o", fpNumber);
         const response = await this.updateFRCommand(fpNumber, startDate, endDate);
-        console.log("========= updating Fingerprint", response);
+        this.log.debug("updating Fingerprint %o", response);
         data = fpNumber;
       }
     } catch (error) {
-      console.error("Error while adding Fingerprint", error);
+      this.log.error({ err: error }, "Error while adding Fingerprint");
     }
 
     return data;
@@ -1085,13 +1087,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= updating Fingerprint", fpNumber);
+        this.log.debug("updating Fingerprint %o", fpNumber);
         const response = await this.updateFRCommand(fpNumber, startDate, endDate);
-        console.log("========= updating Fingerprint", response);
+        this.log.debug("updating Fingerprint %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while updating Fingerprint", error);
+      this.log.error({ err: error }, "Error while updating Fingerprint");
     }
 
     return data;
@@ -1118,13 +1120,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= updating Fingerprint", fpNumber);
+        this.log.debug("updating Fingerprint %o", fpNumber);
         const response = await this.deleteFRCommand(fpNumber);
-        console.log("========= updating Fingerprint", response);
+        this.log.debug("updating Fingerprint %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while adding Fingerprint", error);
+      this.log.error({ err: error }, "Error while adding Fingerprint");
     }
 
     return data;
@@ -1150,13 +1152,13 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= clearing Fingerprints");
+        this.log.debug("clearing Fingerprints");
         const response = await this.clearFRCommand();
-        console.log("========= clearing Fingerprints", response);
+        this.log.debug("clearing Fingerprints %o", response);
         data = response;
       }
     } catch (error) {
-      console.error("Error while clearing Fingerprints", error);
+      this.log.error({ err: error }, "Error while clearing Fingerprints");
     }
 
     return data;
@@ -1184,9 +1186,9 @@ export class TTLock extends TTLockApi implements TTLock {
       if (await this.macro_adminLogin()) {
         let sequence = 0;
         do {
-          console.log("========= get Fingerprints", sequence);
+          this.log.debug("get Fingerprints %o", sequence);
           const response = await this.getFRCommand(sequence);
-          console.log("========= get Fingerprints", response);
+          this.log.debug("get Fingerprints %o", response);
           sequence = response.sequence;
           response.data.forEach((fingerprint) => {
             data.push(fingerprint);
@@ -1194,7 +1196,7 @@ export class TTLock extends TTLockApi implements TTLock {
         } while (sequence != -1);
       }
     } catch (error) {
-      console.error("Error while getting Fingerprints", error);
+      this.log.error({ err: error }, "Error while getting Fingerprints");
     }
 
     return data;
@@ -1223,16 +1225,16 @@ export class TTLock extends TTLockApi implements TTLock {
 
     try {
       if (await this.macro_adminLogin()) {
-        console.log("========= remoteUnlock");
+        this.log.debug("remoteUnlock");
         if (typeof type != "undefined") {
           this.remoteUnlock = await this.controlRemoteUnlockCommand(type);
         } else {
           this.remoteUnlock = await this.controlRemoteUnlockCommand();
         }
-        console.log("========= remoteUnlock:", this.remoteUnlock);
+        this.log.debug("remoteUnlock: %o", this.remoteUnlock);
       }
     } catch (error) {
-      console.error("Error on remote unlock", error);
+      this.log.error({ err: error }, "Error on remote unlock");
     }
 
     return this.remoteUnlock;
@@ -1262,7 +1264,7 @@ export class TTLock extends TTLockApi implements TTLock {
       let sequence = 0xffff;
       let retry = 0;
       do {
-        console.log("========= get OperationLog", sequence);
+        this.log.debug("get OperationLog %o", sequence);
         try {
           const response = await this.getOperationLogCommand(sequence);
           sequence = response.sequence;
@@ -1310,11 +1312,11 @@ export class TTLock extends TTLockApi implements TTLock {
         let failedSequences = 0;
         let retry = 0;
         do {
-          console.log("========= get OperationLog", sequence);
+          this.log.debug("get OperationLog %o", sequence);
           try {
             const response = await this.getOperationLogCommand(sequence);
             sequence = response.sequence;
-            console.log("========= get OperationLog next seq", sequence);
+            this.log.debug("get OperationLog next seq %o", sequence);
             for (let log of response.data) {
               operations[log.recordNumber] = log;
             }
@@ -1323,7 +1325,7 @@ export class TTLock extends TTLockApi implements TTLock {
             retry++;
             // some operations just can't be read
             if (retry == maxRetry) {
-              console.log("========= get OperationLog skip seq", sequence);
+              this.log.debug("get OperationLog skip seq %o", sequence);
               sequence++;
               failedSequences++;
               retry = 0;
@@ -1342,7 +1344,7 @@ export class TTLock extends TTLockApi implements TTLock {
           let retry = 0;
           let success = false;
           do {
-            console.log("========= get OperationLog", sequence);
+            this.log.debug("get OperationLog %o", sequence);
             try {
               const response = await this.getOperationLogCommand(sequence);
               for (let log of response.data) {
@@ -1373,26 +1375,26 @@ export class TTLock extends TTLockApi implements TTLock {
     if (this.privateData.aesKey) {
       command.setAesKey(this.privateData.aesKey);
       const data = command.getCommand().getRawData();
-      console.log("Received:", command);
+      this.log.debug({ cmd: command.getCommandType() }, 'Received notification');
       if (data) {
-        console.log("Data", data.toString("hex"));
+        this.log.trace({ hex: data.toString('hex') }, 'Notification data');
       }
     } else {
-      console.error("Unable to decrypt notification, no AES key");
+      this.log.error("Unable to decrypt notification, no AES key");
     }
   }
 
   private async onConnected(): Promise<void> {
     if (this.isPaired() && !this.skipDataRead) {
       // read general data
-      console.log("Connected to known lock, reading general data");
+      this.log.info("Connected to known lock, reading general data");
       try {
         if (typeof this.featureList == "undefined") {
           // Admin auth required before querying device features on reconnect
           if (await this.macro_adminLogin()) {
-            console.log("========= feature list");
+            this.log.debug("feature list");
             this.featureList = await this.searchDeviceFeatureCommand();
-            console.log("========= feature list", this.featureList);
+            this.log.debug("feature list %o", this.featureList);
           } else {
             throw new Error("Admin login failed before reading device features");
           }
@@ -1400,25 +1402,25 @@ export class TTLock extends TTLockApi implements TTLock {
 
         // Auto lock time
         if (this.featureList.has(FeatureValue.AUTO_LOCK) && this.autoLockTime == -1 && await this.macro_adminLogin()) {
-          console.log("========= autoLockTime");
+          this.log.debug("autoLockTime");
           this.autoLockTime = await this.searchAutoLockTimeCommand();
-          console.log("========= autoLockTime:", this.autoLockTime);
+          this.log.debug("autoLockTime: %o", this.autoLockTime);
         }
 
         if (this.lockedStatus == LockedStatus.UNKNOWN) {
           // Locked/unlocked status
-          console.log("========= check lock status");
+          this.log.debug("check lock status");
           this.lockedStatus = await this.searchBycicleStatusCommand();
-          console.log("========= check lock status", this.lockedStatus);
+          this.log.debug("check lock status %o", this.lockedStatus);
         }
 
         if (this.featureList.has(FeatureValue.AUDIO_MANAGEMENT) && this.lockSound == AudioManage.UNKNOWN) {
-          console.log("========= lockSound");
+          this.log.debug("lockSound");
           this.lockSound = await this.audioManageCommand();
-          console.log("========= lockSound:", this.lockSound);
+          this.log.debug("lockSound: %o", this.lockSound);
         }
       } catch (error) {
-        console.error("Failed reading all general data from lock", error);
+        this.log.error({ err: error }, "Failed reading all general data from lock");
         // TODO: judge the error and fail connect
       }
     } else {

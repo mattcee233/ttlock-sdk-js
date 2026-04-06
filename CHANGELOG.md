@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.6
+- Replace all `console.log/error/warn` calls with [pino](https://github.com/pinojs/pino) structured logging
+- Added `src/util/logger.ts`: single pino logger with pino-pretty transport; exported from index as `logger`
+- Log level controlled by `LOG_LEVEL` env var (default `info`). Values: `trace` (raw hex), `debug` (every BLE command), `info` (connection events), `warn`, `error`
+- Legacy `TTLOCK_DEBUG_COMM=1` / `MQTT_DEBUG=1` still imply `debug` if `LOG_LEVEL` is not set
+- BLE logs include device address in every line via pino child context (`BLE/<addr>`)
+- Lock operation logs include lock address via pino child getter (`Lock/<addr>`)
+- CRC errors now logged as structured warn: `{ expected, got }` fields
+- `trace` level adds raw BLE hex bytes (TX/RX)
+
 ## 0.4.5
 - Fix lock disconnecting on reconnect: `onConnected()` now calls `macro_adminLogin()` (COMM_CHECK_ADMIN + COMM_CHECK_RANDOM) before `searchDeviceFeatureCommand()`. On reconnect the lock requires admin re-authentication before accepting commands; skipping it caused the lock to drop the BLE connection.
 

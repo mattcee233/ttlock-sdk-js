@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Cmd/DeviceFeatures' });
 
 import { CommandType } from "../../constant/CommandType";
 import { FeatureValue } from "../../constant/FeatureValue";
@@ -16,7 +18,7 @@ export class DeviceFeaturesCommand extends Command {
     if (this.commandData) {
       this.batteryCapacity = this.commandData.readInt8(0);
       this.special = this.commandData.readInt32BE(1);
-      console.log(this.commandData);
+      log.debug(this.commandData);
       const features = this.commandData.readUInt32BE(1);
       this.featureList = this.processFeatures(features);
     }

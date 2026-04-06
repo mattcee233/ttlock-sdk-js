@@ -1,6 +1,6 @@
 {
   "name": "ttlock-sdk-js",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "JavaScript port of the TTLock Android SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -74,6 +74,8 @@
     "@stoprocent/noble": "^2.0.0",
     "chalk": "^4.1.0",
     "dayjs": "^1.11.10",
+    "pino": "^9.0.0",
+    "pino-pretty": "^13.0.0",
     "reconnecting-websocket": "^4.4.0",
     "ws": "^8.0.0"
   }

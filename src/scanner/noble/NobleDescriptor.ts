@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/Descriptor' });
 
 import { Descriptor } from "@stoprocent/noble";
 import { EventEmitter } from "events";
@@ -34,7 +36,7 @@ export class NobleDescriptor extends EventEmitter implements DescriptorInterface
     try {
       this.lastValue = await this.descriptor.readValueAsync();
     } catch (error) {
-      console.error(error);
+      log.error(error);
     }
     this.isReading = false;
     this.device.resetBusy();
@@ -59,7 +61,7 @@ export class NobleDescriptor extends EventEmitter implements DescriptorInterface
     // we are only interested in data pushed by the device
     if (!this.isReading) {
       this.lastValue = data;
-      console.log("Descriptor received data", data);
+      log.debug("Descriptor received data", data);
       this.emit("valueRead", this.lastValue);
     }
   }

@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/Char' });
 
 import { Characteristic } from "@stoprocent/noble";
 import { EventEmitter } from "events";
@@ -49,7 +51,7 @@ export class NobleCharacteristic extends EventEmitter implements CharacteristicI
         this.descriptors.set(descriptor.uuid, new NobleDescriptor(this.device, descriptor));
       });
     } catch (error) {
-      console.error(error);
+      log.error(error);
     }
     this.device.resetBusy();
     return this.descriptors;
@@ -68,7 +70,7 @@ export class NobleCharacteristic extends EventEmitter implements CharacteristicI
     try {
       this.lastValue = await this.characteristic.readAsync();
     } catch (error) {
-      console.error(error);
+      log.error(error);
     }
     this.isReading = false;
     this.device.resetBusy();

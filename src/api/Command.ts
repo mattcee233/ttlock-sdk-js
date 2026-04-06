@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../util/logger";
+const log = logger.child({ name: 'Command' });
 
 import { CommandResponse } from "../constant/CommandResponse";
 import { CommandType } from "../constant/CommandType";
@@ -18,7 +20,7 @@ export abstract class Command {
       this.commandResponse = data.readInt8(1);
       this.commandData = data.subarray(2);
       if (process.env.TTLOCK_DEBUG_COMM == "1") {
-        console.log('Command:', this.commandData.toString("hex"));
+        log.debug('Command:', this.commandData.toString("hex"));
       }
       this.processData();
     }

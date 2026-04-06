@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/WS' });
 
 import { EventEmitter } from "events";
 import ReconnectingWebSocket from "reconnecting-websocket";
@@ -78,11 +80,11 @@ export class NobleWebsocketBinding extends EventEmitter {
     this.ws.onmessage = (event: any) => {
       try {
         if (process.env.WEBSOCKET_DEBUG == "1") {
-          console.log("Received: " + chalk.green(event.data.toString()));
+          log.debug({ data: event.data.toString() }, 'WS received');
         }
         this.emit('message', JSON.parse(event.data.toString()));
       } catch (error) {
-        console.error(error);
+        log.error(error);
       }
     };
   }
@@ -92,17 +94,17 @@ export class NobleWebsocketBinding extends EventEmitter {
   }
 
   private onOpen() {
-    console.log(chalk.green('Websocket connected'));
+    log.info('Websocket connected');
   }
 
   private onClose() {
     this.auth = false;
-    console.log(chalk.red('Websocket disconnected'));
+    log.info('Websocket disconnected');
     // this.emit('stateChange', 'poweredOff');
     for(const [peripheralUuid, peripheral] of this.peripherals) {
       if (peripheral.connected) {
         peripheral.connected = false;
-        console.log('Disconnect', peripheralUuid);
+        log.debug('Disconnect', peripheralUuid);
         this.emit('disconnect', peripheralUuid);
       }
       if (peripheral.connecting && !peripheral.bufferedConnect)  {
@@ -164,7 +166,7 @@ export class NobleWebsocketBinding extends EventEmitter {
         this.auth = true;
         if (this.buffer.length > 0) {
           if (process.env.WEBSOCKET_DEBUG == "1") {
-            console.log("Sending buffered commands", this.buffer);
+            log.debug("Sending buffered commands", this.buffer);
           }
           for (let command of this.buffer) {
             this.sendCommand(command);
@@ -250,14 +252,14 @@ export class NobleWebsocketBinding extends EventEmitter {
   private sendCommand(command: any, errorCallback?: any) {
     if (!this.auth && command.action != "auth") {
       if (process.env.WEBSOCKET_DEBUG == "1") {
-        console.log('Buffering command', command);
+        log.debug('Buffering command', command);
       }
       this.buffer.push(command);
     } else {
       const message = JSON.stringify(command);
       this.ws.send(message);
       if (process.env.WEBSOCKET_DEBUG == "1") {
-        console.log("Sent:    " + chalk.cyan(message));
+        log.debug({ data: message }, 'WS sent');
       }
     }
   }

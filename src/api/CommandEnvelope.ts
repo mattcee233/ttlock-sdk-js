@@ -4,10 +4,12 @@ import { CommandType } from "../constant/CommandType";
 import { CodecUtils } from "../util/CodecUtils";
 import { LockType, LockVersion } from "../constant/Lock";
 import { AESUtil } from "../util/AESUtil";
+import { logger } from "../util/logger";
 import { Command } from "./Command";
 import { commandFromData, commandFromType } from "./commandBuilder";
 
 const DEFAULT_HEADER = Buffer.from([0x7F, 0x5A]);
+const log = logger.child({ name: 'Codec' });
 
 export class CommandEnvelope {
   static APP_COMMAND: number = 0xaa;
@@ -70,7 +72,7 @@ export class CommandEnvelope {
     command.crc = rawData.readUInt8(rawData.length - 1);
     if (command.crc != crc) {
       const ignored = process.env.TTLOCK_IGNORE_CRC == "1" ? " (proceeding - IGNORE_CRC enabled)" : "";
-      console.warn(`[CRC ERROR] Bad CRC: expected 0x${crc.toString(16).padStart(2, '0').toUpperCase()}, got 0x${command.crc.toString(16).padStart(2, '0').toUpperCase()}${ignored}`);
+      log.warn({ expected: `0x${crc.toString(16).padStart(2,'0').toUpperCase()}`, got: `0x${command.crc.toString(16).padStart(2,'0').toUpperCase()}` }, `CRC error${ignored}`);
       command.crcok = false;
     }
     command.generateLockType();

@@ -8,6 +8,7 @@ export { TTLockData } from "./store/TTLockData";
 export { ValidityInfo } from "./api/ValidityInfo";
 export { PassageModeData, KeyboardPassCode, ICCard } from "./api/Commands";
 export * from "./constant";
+export { logger } from "./util/logger";
 
 
 // extra stuff used in testing

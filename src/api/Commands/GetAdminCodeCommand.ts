@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Cmd/GetAdminCode' });
 
 import { CommandType } from "../../constant/CommandType";
 import { Command } from "../Command";
@@ -12,7 +14,7 @@ export class GetAdminCodeCommand extends Command {
     if (this.commandData) {
       const len = this.commandData.readUInt8(1);
       if (len != this.commandData.length - 2) {
-        console.error("GetAdminCodeCommand: data size (" + this.commandData.length + ") does not match declared length(" + len + ")");
+        log.error("GetAdminCodeCommand: data size (" + this.commandData.length + ") does not match declared length(" + len + ")");
       }
       if (len > 0) {
         this.adminPasscode = this.commandData.subarray(2, this.commandData.length - 2).toString();

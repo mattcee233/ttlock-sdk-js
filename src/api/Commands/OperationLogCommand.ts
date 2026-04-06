@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Cmd/OperationLog' });
 
 import { CommandType } from "../../constant/CommandType";
 import { LogOperate } from "../../constant/LogOperate";
@@ -155,7 +157,7 @@ export class OperationLogCommand extends Command {
             default:
               pwdLen = recLen - (index - recStart);
               if (pwdLen > 0) {
-                console.error("LogOperate not implemented", log.recordType, "Data left:", this.commandData.slice(index, index + pwdLen).toString("hex"));
+                log.error("LogOperate not implemented", log.recordType, "Data left:", this.commandData.slice(index, index + pwdLen).toString("hex"));
                 index = recStart + recLen;
               }
           }

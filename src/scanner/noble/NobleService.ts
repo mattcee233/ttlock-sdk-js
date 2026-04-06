@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/Service' });
 
 import { Service } from "@stoprocent/noble";
 import { CharacteristicInterface, ServiceInterface } from "../DeviceInterface";
@@ -50,7 +52,7 @@ export class NobleService implements ServiceInterface {
       });
       return this.characteristics;
     } catch (error) {
-      console.error(error);
+      log.error(error);
       this.device.resetBusy();
       return new Map();
     }

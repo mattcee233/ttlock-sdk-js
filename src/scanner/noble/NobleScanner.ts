@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Noble/Scanner' });
 
 import { ScannerInterface, ScannerStateType } from "../ScannerInterface";
 import nobleObj, { Peripheral } from "@stoprocent/noble";
@@ -67,7 +69,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
         return true;
       }
     } catch (error) {
-      console.error(error);
+      log.error(error);
       if (this.scannerState == "starting") {
         this.scannerState = "stopped";
       }
@@ -83,7 +85,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
         return true;
       }
     } catch (error) {
-      console.error(error);
+      log.error(error);
       if (this.scannerState == "stopping") {
         this.scannerState = "scanning";
       }
@@ -126,7 +128,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
     }
 
     if (typeof peripheral.advertisement != "undefined" && typeof peripheral.advertisement.serviceUuids != "undefined" && peripheral.advertisement.serviceUuids.length > 0) {
-      // console.log(peripheral.advertisement.serviceUuids);
+      // log.debug(peripheral.advertisement.serviceUuids);
       for(let service of peripheral.advertisement.serviceUuids) {
         if (this.uuids.indexOf(service.replace('0x', '')) != -1) {
           return true;

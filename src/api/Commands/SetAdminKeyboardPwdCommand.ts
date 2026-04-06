@@ -1,4 +1,6 @@
 'use strict';
+import { logger } from "../../util/logger";
+const log = logger.child({ name: 'Cmd/SetAdminPwd' });
 
 import { CommandType } from "../../constant/CommandType";
 import { Command } from "../Command";
@@ -11,7 +13,7 @@ export class SetAdminKeyboardPwdCommand extends Command {
   protected processData(): void {
     // do nothing yet, we don't know if the lock returns anything
     if(this.commandData && this.commandData.length > 0) {
-      console.log("SetAdminKeyboardPwdCommand received:", this.commandData);
+      log.debug("SetAdminKeyboardPwdCommand received:", this.commandData);
     }
     // throw new Error("Method not implemented.");
   }
