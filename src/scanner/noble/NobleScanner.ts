@@ -1,7 +1,7 @@
 'use strict';
 
 import { ScannerInterface, ScannerStateType } from "../ScannerInterface";
-import nobleObj from "@stoprocent/noble";
+import nobleObj, { Peripheral } from "@stoprocent/noble";
 import { EventEmitter } from "events";
 import { NobleDevice } from "./NobleDevice";
 
@@ -101,7 +101,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
     }
   }
 
-  protected async onNobleDiscover(peripheral: nobleObj.Peripheral): Promise<void> {
+  protected async onNobleDiscover(peripheral: Peripheral): Promise<void> {
     if (!this.devices.has(peripheral.id)) {
       const nobleDevice = new NobleDevice(peripheral);
       this.devices.set(peripheral.id, nobleDevice);
@@ -120,7 +120,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
     }
   }
 
-  protected checkPeripheralAdvertisement(peripheral: nobleObj.Peripheral): boolean {
+  protected checkPeripheralAdvertisement(peripheral: Peripheral): boolean {
     if (typeof this.uuids == "undefined" || this.uuids.length == 0) {
       return true;
     }

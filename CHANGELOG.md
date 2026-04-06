@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.2
+- Fix TS2503: import Peripheral type directly from @stoprocent/noble instead of using nobleObj namespace
+
 ## 0.4.1
 - Fix syntax error in InitPasswordsCommand.ts (stray extra `}` after class body caused TS1128 build failure)
 
