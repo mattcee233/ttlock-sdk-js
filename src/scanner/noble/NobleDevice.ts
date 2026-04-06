@@ -85,11 +85,11 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       log.debug("Peripheral connect start");
       this.peripheral.connect((error) => {
         if (typeof error != "undefined" && error != null) {
-          log.debug("Peripheral connect error:", error);
+          log.debug(`Peripheral connect error: ${error}`);
           this.connected = false;
           this.connecting = false;
         } else {
-          log.debug("Peripheral state:", this.peripheral.state);
+          log.debug(`Peripheral state: ${this.peripheral.state}`);
           if (this.peripheral.state == "connected") {
             this.connected = true;
             this.connecting = false;
@@ -117,7 +117,7 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
         return true;
       }
     }
-    log.debug("Peripheral state:", this.peripheral.state);
+    log.debug(`Peripheral state: ${this.peripheral.state}`);
     return this.connected;
   }
 
@@ -212,10 +212,10 @@ export class NobleDevice extends EventEmitter implements DeviceInterface {
       for (let [uuid, service] of this.services) {
         for (let [uuid, characteristic] of service.characteristics) {
           if (characteristic.properties.includes("read")) {
-            log.debug("Reading", uuid);
+            log.debug(`Reading ${uuid}`);
             const data = await characteristic.read();
             if (typeof data != "undefined") {
-              log.debug("Data", data.toString("ascii"));
+              log.debug(`Data: ${data.toString("ascii")}`);
             }
           }
         }

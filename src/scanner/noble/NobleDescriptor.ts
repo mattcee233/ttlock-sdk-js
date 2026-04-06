@@ -61,7 +61,7 @@ export class NobleDescriptor extends EventEmitter implements DescriptorInterface
     // we are only interested in data pushed by the device
     if (!this.isReading) {
       this.lastValue = data;
-      log.debug("Descriptor received data", data);
+      log.debug({ data: data.toString("hex") }, "Descriptor received data");
       this.emit("valueRead", this.lastValue);
     }
   }

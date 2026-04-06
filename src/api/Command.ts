@@ -20,7 +20,7 @@ export abstract class Command {
       this.commandResponse = data.readInt8(1);
       this.commandData = data.subarray(2);
       if (process.env.TTLOCK_DEBUG_COMM == "1") {
-        log.debug('Command:', this.commandData.toString("hex"));
+        log.debug(`Command: ${this.commandData.toString("hex")}`);
       }
       this.processData();
     }

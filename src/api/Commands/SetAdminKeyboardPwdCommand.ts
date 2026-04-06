@@ -13,7 +13,7 @@ export class SetAdminKeyboardPwdCommand extends Command {
   protected processData(): void {
     // do nothing yet, we don't know if the lock returns anything
     if(this.commandData && this.commandData.length > 0) {
-      log.debug("SetAdminKeyboardPwdCommand received:", this.commandData);
+      log.debug(`SetAdminKeyboardPwdCommand received: ${this.commandData}`);
     }
     // throw new Error("Method not implemented.");
   }

@@ -129,7 +129,7 @@ export abstract class TTLockApi extends EventEmitter {
     }
 
     if (paramsChanged.batteryCapacity || paramsChanged.lockedStatus || paramsChanged.newEvents) {
-      log.debug("Emmiting paramsChanged", paramsChanged);
+      log.debug({ paramsChanged }, "Emmiting paramsChanged");
       this.emit("updated", this, paramsChanged);
     }
   }
@@ -212,7 +212,7 @@ export abstract class TTLockApi extends EventEmitter {
       adminPs: addAdminCommand.setAdminPs(),
       unlockKey: addAdminCommand.setUnlockKey(),
     }
-    log.debug("Setting adminPs", admin.adminPs, "and unlockKey", admin.unlockKey);
+    log.debug(`Setting adminPs ${admin.adminPs} and unlockKey ${admin.unlockKey}`);
     const responseEnvelope = await this.device.sendCommand(requestEnvelope);
     if (responseEnvelope) {
       responseEnvelope.setAesKey(aesKey);
@@ -435,7 +435,7 @@ export abstract class TTLockApi extends EventEmitter {
       for (let i = 0; i < 7; i++) {
         adminPasscode += (Math.floor(Math.random() * 10)).toString();
       }
-      log.debug("Generated adminPasscode:", adminPasscode);
+      log.debug(`Generated adminPasscode: ${adminPasscode}`);
     }
     const requestEnvelope = CommandEnvelope.createFromLockType(this.device.lockType, aesKey);
     requestEnvelope.setCommandType(CommandType.COMM_SET_ADMIN_KEYBOARD_PWD);
@@ -1361,7 +1361,7 @@ export abstract class TTLockApi extends EventEmitter {
     try {
       log.debug("========= check admin");
       const psFromLock = await this.checkAdminCommand();
-      log.debug("========= check admin:", psFromLock);
+      log.debug(`========= check admin: ${psFromLock}`);
       if (psFromLock > 0) {
         log.debug("========= check random");
         await this.checkRandomCommand(psFromLock);
@@ -1369,10 +1369,10 @@ export abstract class TTLockApi extends EventEmitter {
         this.adminAuth = true;
         return true;
       } else {
-        log.error("Invalid psFromLock received", psFromLock);
+        log.error(`Invalid psFromLock received: ${psFromLock}`);
       }
     } catch (error) {
-      log.error("macro_adminLogin:", error);
+      log.error(`macro_adminLogin: ${error}`);
     }
     return false;
   }

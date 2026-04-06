@@ -104,7 +104,7 @@ export class NobleWebsocketBinding extends EventEmitter {
     for(const [peripheralUuid, peripheral] of this.peripherals) {
       if (peripheral.connected) {
         peripheral.connected = false;
-        log.debug('Disconnect', peripheralUuid);
+        log.debug(`Disconnect ${peripheralUuid}`);
         this.emit('disconnect', peripheralUuid);
       }
       if (peripheral.connecting && !peripheral.bufferedConnect)  {
@@ -166,7 +166,7 @@ export class NobleWebsocketBinding extends EventEmitter {
         this.auth = true;
         if (this.buffer.length > 0) {
           if (process.env.WEBSOCKET_DEBUG == "1") {
-            log.debug("Sending buffered commands", this.buffer);
+            log.debug({ commands: this.buffer }, "Sending buffered commands");
           }
           for (let command of this.buffer) {
             this.sendCommand(command);
