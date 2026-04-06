@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.3
+- Fix MODULE_NOT_FOUND on startup: @stoprocent/noble removed the `with-bindings` sub-path; use `lib/noble` directly to get the Noble constructor for custom bindings
+
 ## 0.4.2
 - Fix TS2503: import Peripheral type directly from @stoprocent/noble instead of using nobleObj namespace
 

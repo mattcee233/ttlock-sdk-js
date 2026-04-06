@@ -2,7 +2,7 @@
 
 import { NobleScanner } from "./NobleScanner";
 import { NobleWebsocketBinding } from "./NobleWebsocketBinding";
-const Noble = require("@stoprocent/noble/with-bindings");
+const Noble = require("@stoprocent/noble/lib/noble");
 
 export class NobleScannerWebsocket extends NobleScanner {
   private websocketAddress: string;
