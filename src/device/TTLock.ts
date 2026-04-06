@@ -185,13 +185,15 @@ export class TTLock extends TTLockApi implements TTLock {
     // TODO: also check if lock is already inited (has AES key)
 
     try {
-      // COMM_INITIALIZATION (0x45) is only used by older V1/V2 protocol locks.
-      // V3 locks do not respond to it and will disconnect — skip it for V3/V3_CAR.
-      if (this.device.lockType !== LockType.LOCK_TYPE_V3 && this.device.lockType !== LockType.LOCK_TYPE_V3_CAR) {
-        this.log.debug("init");
-        await this.initCommand();
-        this.log.debug("init");
-      }
+      // COMM_INITIALIZATION (0x45) acts as a session-start handshake required by all lock
+      // types, including V3. Without it, V3 locks misinterpret COMM_GET_AES_KEY and respond
+      // with an unintended "delete admin" action instead of providing the AES key.
+      // The previous 11 s timeout (which led to this being disabled for V3) was caused by the
+      // slow service 1800 read which has since been removed; COMM_INITIALIZATION now completes
+      // well within the lock's connection window.
+      this.log.debug("init");
+      await this.initCommand();
+      this.log.debug("init");
 
       // Get AES key
       this.log.debug("AES key");

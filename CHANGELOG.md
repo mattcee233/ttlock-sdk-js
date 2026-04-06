@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.11
+- Re-enable `COMM_INITIALIZATION` (0x45) for V3 locks: the command acts as a required session-start handshake for all lock types. Without it, V3 locks misinterpret `COMM_GET_AES_KEY` and respond with an unintended admin-delete action instead of providing the AES key. The previous 11 s disconnect (which led to disabling this) was caused by the slow service `1800` GATT read that has since been removed
+
 ## 0.4.10
 - Fix `readBasicInfo()` causing HCI error 19 (Remote User Terminated) on locks in setting mode: skip GATT service `1800` (Device Name) — this read is not done by the reference Android SDK and burns ~0.5s before any protocol commands, exceeding the lock's short setting-mode connection timer
 - Make service `180a` (Device Information) reads resilient: if the lock disconnects mid-read, firmware/model stay as `"unknown"` and connection proceeds rather than throwing up to the caller
