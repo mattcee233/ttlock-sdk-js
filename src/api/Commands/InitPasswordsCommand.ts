@@ -1,6 +1,6 @@
 'use strict';
 
-import moment from "moment";
+import dayjs from "dayjs";
 import { CommandType } from "../../constant/CommandType";
 import { Command } from "../Command";
 
@@ -68,10 +68,11 @@ export class InitPasswordsCommand extends Command {
   }
 
   private calculateYear(): number {
-    if (moment().format("MMDD") == "0101") { // someone does not like 1st of Jan
-      return parseInt(moment().subtract(1, "years").format("YYYY"));
+    if (dayjs().format("MMDD") == "0101") { // someone does not like 1st of Jan
+      return parseInt(dayjs().subtract(1, "year").format("YYYY"));
     } else {
-      return parseInt(moment().format("YYYY"));
+      return parseInt(dayjs().format("YYYY"));
     }
   }
+}
 }

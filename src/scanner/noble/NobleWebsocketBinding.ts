@@ -3,7 +3,7 @@
 import { EventEmitter } from "events";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import WebSocket from "ws";
-import CryptoJS from "crypto-js";
+import crypto from "crypto";
 import chalk from "chalk";
 
 type Peripheral = {
@@ -53,14 +53,14 @@ export class NobleWebsocketBinding extends EventEmitter {
   private buffer: any[];
   private startScanCommand: any | null;
   private peripherals: Map<string, Peripheral>;
-  private aesKey: CryptoJS.lib.WordArray;
-  private credentials: string;
+  private aesKey: Buffer;
+  private credentials: Buffer;
 
   constructor(address: string, port: number, key: string, user: string, pass: string) {
     super();
 
-    this.aesKey = CryptoJS.enc.Hex.parse(key);
-    this.credentials = user + ':' + pass;
+    this.aesKey = Buffer.from(key, 'hex');
+    this.credentials = Buffer.from(user + ':' + pass, 'utf8');
     this.auth = false;
     this.wasReady = false;
     this.buffer = [];
@@ -139,16 +139,24 @@ export class NobleWebsocketBinding extends EventEmitter {
     if (type === "auth") {
       // send authentication response
       if (typeof event.challenge != "undefined" && event.challenge.length == 32) {
-        const challenge = CryptoJS.enc.Hex.parse(event.challenge);
-        const response = CryptoJS.AES.encrypt(this.credentials, this.aesKey, {
-          iv: challenge,
-          mode: CryptoJS.mode.CBC,
-          padding: CryptoJS.pad.ZeroPadding
-        });
+        const challenge = Buffer.from(event.challenge, 'hex');
+        
+        // Zero padding for credentials to reach multiple of 16 bytes block size
+        let paddedCreds = this.credentials;
+        const padLen = 16 - (paddedCreds.length % 16);
+        if (padLen !== 16) {
+           const padBuf = Buffer.alloc(padLen, 0);
+           paddedCreds = Buffer.concat([paddedCreds, padBuf]);
+        }
+        
+        const cipher = crypto.createCipheriv('aes-128-cbc', this.aesKey, challenge);
+        cipher.setAutoPadding(false); // We manually added zero padding
+        let responseBuffer = cipher.update(paddedCreds);
+        responseBuffer = Buffer.concat([responseBuffer, cipher.final()]);
 
         this.sendCommand({
           action: "auth",
-          response: response.toString(CryptoJS.format.Hex)
+          response: responseBuffer.toString('hex')
         });
       }
     } else if (type === 'stateChange') {

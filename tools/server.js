@@ -1,6 +1,6 @@
 var WebSocket = require('ws');
-var CryptoJS = require("crypto-js");
-const moment = require("moment");
+var crypto = require("crypto");
+const dayjs = require("dayjs");
 const chalk = require('chalk');
 
 const aesKey = process.env.WEBSOCKET_KEY || "f8b55c272eb007f501560839be1f1e7e";
@@ -11,23 +11,23 @@ var noble = require('@abandonware/noble');
 /** @type {WebSocket.Server} */
 var wss;
 
-console.log(moment().format('YYYYMMDD HH:mm:ss.SSS') + ' noble - ws slave - server mode');
+console.log(dayjs().format('YYYYMMDD HH:mm:ss.SSS') + ' noble - ws slave - server mode');
 wss = new WebSocket.Server({
   port: process.env.WEBSOCKET_PORT || 2846
 });
 
 wss.on('connection', function (ws) {
-  console.log(moment().format('YYYYMMDD HH:mm:ss.SSS') + ' <-> ' + chalk.magenta('connect'));
+  console.log(dayjs().format('YYYYMMDD HH:mm:ss.SSS') + ' <-> ' + chalk.magenta('connect'));
 
   ws.isAuthenticated = false;
-  ws.authChallenge = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
+  ws.authChallenge = crypto.randomBytes(16).toString('hex');
 
   ws.on('message', (message) => {
     onMessage(ws, message);
   });
 
   ws.on('close', function () {
-    console.log(moment().format('YYYYMMDD HH:mm:ss.SSS') + ' <-> ' + chalk.yellow('disconnect'));
+    console.log(dayjs().format('YYYYMMDD HH:mm:ss.SSS') + ' <-> ' + chalk.yellow('disconnect'));
     noble.stopScanning();
   });
 
@@ -44,7 +44,7 @@ var peripherals = new Map();
 function sendEvent(event) {
   var message = JSON.stringify(event);
 
-  console.log(moment().format('YYYYMMDD HH:mm:ss.SSS') + ' --> ' + chalk.green(message));
+  console.log(dayjs().format('YYYYMMDD HH:mm:ss.SSS') + ' --> ' + chalk.green(message));
 
   for (let client of wss.clients) {
     if (client.isAuthenticated || event.type == "auth") {
@@ -54,13 +54,13 @@ function sendEvent(event) {
 }
 
 var onMessage = function (ws, message) {
-  console.log(moment().format('YYYYMMDD HH:mm:ss.SSS') + ' <-- ' + chalk.cyan(message));
+  console.log(dayjs().format('YYYYMMDD HH:mm:ss.SSS') + ' <-- ' + chalk.cyan(message));
 
   var command;
   try {
     command = JSON.parse(message);
   } catch (error) {
-    console.log(chalk.red(moment().format('YYYYMMDD HH:mm:ss.SSS')), error);
+    console.log(chalk.red(dayjs().format('YYYYMMDD HH:mm:ss.SSS')), error);
     return;
   }
 
@@ -71,13 +71,17 @@ var onMessage = function (ws, message) {
       if (command.response) {
         // check the authentication
         try {
-          const response = CryptoJS.AES.decrypt(command.response, CryptoJS.enc.Hex.parse(aesKey), {
-            iv: CryptoJS.enc.Hex.parse(ws.authChallenge),
-            format: CryptoJS.format.Hex,
-            mode: CryptoJS.mode.CBC,
-            padding: CryptoJS.pad.ZeroPadding
-          });
-          if (response.toString(CryptoJS.enc.Utf8) == credentials) {
+          const decipher = crypto.createDecipheriv('aes-128-cbc', Buffer.from(aesKey, 'hex'), Buffer.from(ws.authChallenge, 'hex'));
+          decipher.setAutoPadding(false);
+          let decrypted = decipher.update(Buffer.from(command.response, 'hex'));
+          decrypted = Buffer.concat([decrypted, decipher.final()]);
+          
+          let unpadded = decrypted;
+          while (unpadded.length > 0 && unpadded[unpadded.length - 1] === 0) {
+            unpadded = unpadded.slice(0, unpadded.length - 1);
+          }
+
+          if (unpadded.toString('utf8') == credentials) {
             ws.isAuthenticated = true;
             // Send poweredOn if already in this state.
             if (noble.state === 'poweredOn') {

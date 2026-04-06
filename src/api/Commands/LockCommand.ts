@@ -1,6 +1,6 @@
 'use strict';
 
-import moment from "moment";
+import dayjs from "dayjs";
 import { CommandType } from "../../constant/CommandType";
 import { dateTimeToBuffer } from "../../util/timeUtil";
 import { Command } from "../Command";
@@ -21,15 +21,15 @@ export class LockCommand extends Command {
       if (this.commandData.length >= 15) {
         this.uid = this.commandData.readUInt32BE(1);
         this.uniqueid = this.commandData.readUInt32BE(5);
-        const dateObj = {
-          year: 2000 + this.commandData.readUInt8(9),
-          month: this.commandData.readUInt8(10) - 1,
-          day: this.commandData.readUInt8(11),
-          hour: this.commandData.readUInt8(12),
-          minute: this.commandData.readUInt8(13),
-          second: this.commandData.readUInt8(14)
-        }
-        this.dateTime = moment(dateObj).format("YYMMDDHHmmss");
+        const dateObj = new Date(
+          2000 + this.commandData.readUInt8(9),
+          this.commandData.readUInt8(10) - 1,
+          this.commandData.readUInt8(11),
+          this.commandData.readUInt8(12),
+          this.commandData.readUInt8(13),
+          this.commandData.readUInt8(14)
+        );
+        this.dateTime = dayjs(dateObj).format("YYMMDDHHmmss");
       }
     }
   }
@@ -38,7 +38,7 @@ export class LockCommand extends Command {
     if (this.sum) {
       const data = Buffer.alloc(10);
       data.writeUInt32BE(this.sum, 0);
-      dateTimeToBuffer(moment().format("YYMMDDHHmmss")).copy(data, 4);
+      dateTimeToBuffer(dayjs().format("YYMMDDHHmmss")).copy(data, 4);
       return data;
     }
     return Buffer.from([]);

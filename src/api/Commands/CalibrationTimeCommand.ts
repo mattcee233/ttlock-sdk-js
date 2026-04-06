@@ -2,7 +2,7 @@
 
 import { CommandType } from "../../constant/CommandType";
 import { Command } from "../Command";
-import moment from "moment";
+import dayjs from "dayjs";
 import { dateTimeToBuffer } from "../../util/timeUtil";
 
 export class CalibrationTimeCommand extends Command {
@@ -15,7 +15,7 @@ export class CalibrationTimeCommand extends Command {
 
   build(): Buffer {
     if (typeof this.time == "undefined") {
-      this.time = moment().format("YYMMDDHHmmss");
+      this.time = dayjs().format("YYMMDDHHmmss");
     }
     return dateTimeToBuffer(this.time);
   }

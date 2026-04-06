@@ -1,6 +1,8 @@
 'use strict';
 
-import moment from "moment";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 import { CommandType } from "../../constant/CommandType";
 import { DateConstant } from "../../constant/DateConstant";
 import { KeyboardPwdType } from "../../constant/KeyboardPwdType";
@@ -14,8 +16,8 @@ export class ManageKeyboardPasswordCommand extends Command {
   private type?: KeyboardPwdType;
   private oldPassCode?: string;
   private passCode?: string;
-  private startDate?: moment.Moment;
-  private endDate?: moment.Moment;
+  private startDate?: dayjs.Dayjs;
+  private endDate?: dayjs.Dayjs;
 
   protected processData(): void {
     if (this.commandData && this.commandData.length > 1) {
@@ -49,11 +51,11 @@ export class ManageKeyboardPasswordCommand extends Command {
     } else {
       return false;
     }
-    this.startDate = moment(startDate, "YYYYMMDDHHmm");
+    this.startDate = dayjs(startDate, "YYYYMMDDHHmm");
     if (!this.startDate.isValid()) {
       return false;
     }
-    this.endDate = moment(endDate, "YYYYMMDDHHmm");
+    this.endDate = dayjs(endDate, "YYYYMMDDHHmm");
     if (!this.endDate.isValid()) {
       return false;
     }
@@ -73,11 +75,11 @@ export class ManageKeyboardPasswordCommand extends Command {
     } else {
       return false;
     }
-    this.startDate = moment(startDate, "YYYYMMDDHHmm");
+    this.startDate = dayjs(startDate, "YYYYMMDDHHmm");
     if (!this.startDate.isValid()) {
       return false;
     }
-    this.endDate = moment(endDate, "YYYYMMDDHHmm");
+    this.endDate = dayjs(endDate, "YYYYMMDDHHmm");
     if (!this.endDate.isValid()) {
       return false;
     }

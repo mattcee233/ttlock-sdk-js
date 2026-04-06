@@ -1,6 +1,8 @@
 'use strict';
 
-import moment from "moment";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 import { DateConstant } from "../constant/DateConstant";
 
 export enum ValidityType {
@@ -19,17 +21,17 @@ export interface CyclicConfig {
 
 export class ValidityInfo {
   private type: ValidityType;
-  private startDate: moment.Moment;
-  private endDate: moment.Moment;
+  private startDate: dayjs.Dayjs;
+  private endDate: dayjs.Dayjs;
   private cycles: CyclicConfig[];
 
   constructor(type: ValidityType = ValidityType.TIMED, startDate: string = DateConstant.START_DATE_TIME, endDdate: string = DateConstant.END_DATE_TIME) {
     this.type = type;
-    this.startDate = moment(startDate, "YYYYMMDDHHmm");
+    this.startDate = dayjs(startDate, "YYYYMMDDHHmm");
     if (!this.startDate.isValid()) {
       throw new Error("Invalid startDate");
     }
-    this.endDate = moment(endDdate, "YYYYMMDDHHmm");
+    this.endDate = dayjs(endDdate, "YYYYMMDDHHmm");
     if (!this.endDate.isValid()) {
       throw new Error("Invalid endDate");
     }
@@ -49,7 +51,7 @@ export class ValidityInfo {
   }
 
   setStartDate(startDate: string): boolean {
-    let date = moment(startDate, "YYYYMMDDHHmm");
+    let date = dayjs(startDate, "YYYYMMDDHHmm");
     if (date.isValid()) {
       this.startDate = date;
       return true;
@@ -58,7 +60,7 @@ export class ValidityInfo {
   }
 
   setEndDate(endDate: string): boolean {
-    let date = moment(endDate, "YYYYMMDDHHmm");
+    let date = dayjs(endDate, "YYYYMMDDHHmm");
     if (date.isValid()) {
       this.endDate = date;
       return true;
@@ -74,7 +76,7 @@ export class ValidityInfo {
     return this.startDate.format("YYYYMMDDHHmm");
   }
 
-  getStartDateMoment(): moment.Moment {
+  getStartDateMoment(): dayjs.Dayjs {
     return this.startDate;
   }
 
@@ -82,7 +84,7 @@ export class ValidityInfo {
     return this.endDate.format("YYYYMMDDHHmm");
   }
 
-  geetEndDateMoment(): moment.Moment {
+  geetEndDateMoment(): dayjs.Dayjs {
     return this.endDate;
   }
 
