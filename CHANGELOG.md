@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.1
+- Fix syntax error in InitPasswordsCommand.ts (stray extra `}` after class body caused TS1128 build failure)
+
 ## 0.4.0
 - Replace @abandonware/noble with @stoprocent/noble for Node.js 18/20/22 compatibility
 - Fix critical bug: LOCK_TYPE_SAFE enum value was 8, same as LOCK_TYPE_V3_CAR — changed LOCK_TYPE_SAFE to 14 to prevent incorrect LockVersion resolution for Safe locks
