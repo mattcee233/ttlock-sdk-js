@@ -68,9 +68,15 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
       await this.scanner.stopScan();
       this.log.info('Initiating BLE connection');
       if (await this.device.connect()) {
-        // TODO: something happens here (disconnect) and it's stuck in limbo
         this.log.debug('Reading device info');
-        await this.readBasicInfo();
+        try {
+          await this.readBasicInfo();
+        } catch (error) {
+          // Lock may disconnect during GATT reads (e.g. setting-mode timeout). If the
+          // BLE link is now gone, subscribe() will fail and connect() returns false normally.
+          // If somehow still connected, proceed and let subscribe() decide.
+          this.log.debug({ err: (error as Error).message }, 'Device info read incomplete, continuing');
+        }
         this.log.debug({ name: this.name, fw: this.firmware, mfr: this.manufacturer, model: this.model, lockType: LockType[this.lockType] }, 'Device info');
         const subscribed = await this.subscribe();
         if (!subscribed) {
@@ -112,23 +118,23 @@ export class TTBluetoothDevice extends TTDevice implements TTBluetoothDevice {
       this.log.debug('Discovering BLE services');
       await this.device.discoverServices();
       this.log.debug('BLE services discovered');
-      // update some basic information
-      let service: ServiceInterface | undefined;
-      if (this.device.services.has("1800")) {
-        service = this.device.services.get("1800");
-        if (typeof service != "undefined") {
-          await service.readCharacteristics();
-          this.putCharacteristicValue(service, "2a00", "name");
-        }
-      }
+      // Service 1800 (Device Name) is skipped: the name is already available from the
+      // advertisement manufacturer data, and reading it adds an extra GATT round-trip that
+      // can push us past the lock's short setting-mode connection timeout (HCI error 19).
+      // Service 180a: Device Information (firmware, model, etc.)
       if (this.device.services.has("180a")) {
-        service = this.device.services.get("180a");
+        const service = this.device.services.get("180a");
         if (typeof service != "undefined") {
-          await service.readCharacteristics();
-          this.putCharacteristicValue(service, "2a29", "manufacturer");
-          this.putCharacteristicValue(service, "2a24", "model");
-          this.putCharacteristicValue(service, "2a27", "hardware");
-          this.putCharacteristicValue(service, "2a26", "firmware");
+          try {
+            await service.readCharacteristics();
+            this.putCharacteristicValue(service, "2a29", "manufacturer");
+            this.putCharacteristicValue(service, "2a24", "model");
+            this.putCharacteristicValue(service, "2a27", "hardware");
+            this.putCharacteristicValue(service, "2a26", "firmware");
+          } catch (error) {
+            // Lock disconnected mid-read; firmware/model stay "unknown". Not fatal.
+            this.log.debug({ err: (error as Error).message }, 'Device info (180a) read incomplete');
+          }
         }
       }
     }

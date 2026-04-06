@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.10
+- Fix `readBasicInfo()` causing HCI error 19 (Remote User Terminated) on locks in setting mode: skip GATT service `1800` (Device Name) — this read is not done by the reference Android SDK and burns ~0.5s before any protocol commands, exceeding the lock's short setting-mode connection timer
+- Make service `180a` (Device Information) reads resilient: if the lock disconnects mid-read, firmware/model stay as `"unknown"` and connection proceeds rather than throwing up to the caller
+- Wrap `readBasicInfo()` call in `TTBluetoothDevice.connect()` to prevent an uncaught exception propagating all the way to `_connectLock` when the lock disconnects during device-info reads
+
 ## 0.4.9
 - Fix `initLock()` failing immediately on V3 locks: `COMM_INITIALIZATION` (0x45) is not part of the V3 protocol — sending it causes the lock to terminate the BLE connection. The command is now skipped for `LOCK_TYPE_V3` and `LOCK_TYPE_V3_CAR`; the init sequence goes straight to `COMM_GET_AES_KEY` as the Android SDK does
 
