@@ -185,10 +185,13 @@ export class TTLock extends TTLockApi implements TTLock {
     // TODO: also check if lock is already inited (has AES key)
 
     try {
-      // Init
-      this.log.debug("init");
-      await this.initCommand();
-      this.log.debug("init");
+      // COMM_INITIALIZATION (0x45) is only used by older V1/V2 protocol locks.
+      // V3 locks do not respond to it and will disconnect — skip it for V3/V3_CAR.
+      if (this.device.lockType !== LockType.LOCK_TYPE_V3 && this.device.lockType !== LockType.LOCK_TYPE_V3_CAR) {
+        this.log.debug("init");
+        await this.initCommand();
+        this.log.debug("init");
+      }
 
       // Get AES key
       this.log.debug("AES key");

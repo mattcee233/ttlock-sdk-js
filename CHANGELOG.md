@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.9
+- Fix `initLock()` failing immediately on V3 locks: `COMM_INITIALIZATION` (0x45) is not part of the V3 protocol — sending it causes the lock to terminate the BLE connection. The command is now skipped for `LOCK_TYPE_V3` and `LOCK_TYPE_V3_CAR`; the init sequence goes straight to `COMM_GET_AES_KEY` as the Android SDK does
+
 ## 0.4.8
 - Fix connection retry loop stumbling on stale BLE link: after the 15-second `connect()` initialisation timeout (e.g. lock ignores `COMM_CHECK_ADMIN` because stored keys are stale post-reset), explicitly disconnect the still-live BLE link before returning `false` so the next retry reconnects cleanly
 - Fix `onConnected()` detecting a factory-reset lock: if the device is advertising `isSettingMode=true` but we have stored credentials, skip the doomed admin-auth and emit `connected` immediately with a warning — the manager can then re-initialize the lock instead of wasting 15 s per attempt
