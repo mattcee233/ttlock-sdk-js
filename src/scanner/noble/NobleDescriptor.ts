@@ -1,6 +1,6 @@
 'use strict';
 
-import { Descriptor } from "@abandonware/noble";
+import { Descriptor } from "@stoprocent/noble";
 import { EventEmitter } from "events";
 import { DescriptorInterface } from "../DeviceInterface";
 import { NobleDevice } from "./NobleDevice";

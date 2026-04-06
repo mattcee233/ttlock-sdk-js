@@ -1,6 +1,6 @@
 'use strict';
 
-import { Service } from "@abandonware/noble";
+import { Service } from "@stoprocent/noble";
 import { CharacteristicInterface, ServiceInterface } from "../DeviceInterface";
 import { NobleCharacteristic } from "./NobleCharacteristic";
 import { NobleDevice } from "./NobleDevice";

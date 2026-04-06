@@ -20,7 +20,7 @@ export enum LockType {
   /** Electric car lock b.1 */
   LOCK_TYPE_MOBI = 7,
   /** Safe lock 8.1 */
-  LOCK_TYPE_SAFE = 8,
+  LOCK_TYPE_SAFE = 14,
   /** Bicycle lock 9.1 */
   LOCK_TYPE_BICYCLE = 9,
   /** Gate lock */

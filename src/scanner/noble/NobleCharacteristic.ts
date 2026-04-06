@@ -1,6 +1,6 @@
 'use strict';
 
-import { Characteristic } from "@abandonware/noble";
+import { Characteristic } from "@stoprocent/noble";
 import { EventEmitter } from "events";
 import { sleep } from "../../util/timingUtil";
 import { CharacteristicInterface, DescriptorInterface } from "../DeviceInterface";

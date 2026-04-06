@@ -1,7 +1,7 @@
 'use strict';
 
 import { ScannerInterface, ScannerStateType } from "../ScannerInterface";
-import nobleObj from "@abandonware/noble";
+import nobleObj from "@stoprocent/noble";
 import { EventEmitter } from "events";
 import { NobleDevice } from "./NobleDevice";
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+- Replace @abandonware/noble with @stoprocent/noble for Node.js 18/20/22 compatibility
+- Fix critical bug: LOCK_TYPE_SAFE enum value was 8, same as LOCK_TYPE_V3_CAR — changed LOCK_TYPE_SAFE to 14 to prevent incorrect LockVersion resolution for Safe locks
+- Update TypeScript to v5.x
+- Update @types/node to Node.js 20 types
+- Update ws to v8.x
+- Update tsconfig to target Node.js 22
+
+## 0.3.19
+- Update to @tsconfig/node20 compatibility preparation
+
 ## 0.3.18
 - Update CheckUserTimeCommand to use 12-character date strings (YYMMDDHHmmss)
 - Fix CheckUserTimeCommand buffer offsets to prevent data overlap

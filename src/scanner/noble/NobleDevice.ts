@@ -1,7 +1,7 @@
 'use strict';
 
 import { DeviceInterface, ServiceInterface } from "../DeviceInterface";
-import { Peripheral, Service } from "@abandonware/noble";
+import { Peripheral, Service } from "@stoprocent/noble";
 import { EventEmitter } from "events";
 import { NobleService } from "./NobleService";
 import { sleep } from "../../util/timingUtil";
