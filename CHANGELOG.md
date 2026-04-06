@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.8
+- Fix connection retry loop stumbling on stale BLE link: after the 15-second `connect()` initialisation timeout (e.g. lock ignores `COMM_CHECK_ADMIN` because stored keys are stale post-reset), explicitly disconnect the still-live BLE link before returning `false` so the next retry reconnects cleanly
+- Fix `onConnected()` detecting a factory-reset lock: if the device is advertising `isSettingMode=true` but we have stored credentials, skip the doomed admin-auth and emit `connected` immediately with a warning — the manager can then re-initialize the lock instead of wasting 15 s per attempt
+
 ## 0.4.7
 - Fix pino v9 strict TypeScript overload errors: replace all `log.debug/error("label:", value)` and `log.debug("text %o", value)` patterns with template literals or structured `{ key: value }` objects across TTLock.ts, TTLockApi.ts, Command.ts, UnknownCommand.ts, OperationLogCommand.ts, NobleDescriptor.ts, NobleDevice.ts, NobleWebsocketBinding.ts
 - Fix syntax bug in TTLock.ts: missing closing parenthesis inside AES key template literal

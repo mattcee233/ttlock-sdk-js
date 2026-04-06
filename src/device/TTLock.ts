@@ -100,7 +100,13 @@ export class TTLock extends TTLockApi implements TTLock {
     }
     this.skipDataRead = false;
     this.connecting = false;
-    // it is possible that even tho device initially connected, reading initial data will disconnect
+    // if we timed out while BLE is still physically connected (e.g. lock ignored our command
+    // because stored keys are stale after a lock reset), disconnect cleanly so the next
+    // retry attempt starts from a fresh connection rather than reusing a half-broken link.
+    if (!this.connected && this.device.connected) {
+      this.log.warn("Connection initialisation timed out, disconnecting BLE link");
+      await this.device.disconnect();
+    }
     return this.connected;
   }
 
@@ -1386,6 +1392,18 @@ export class TTLock extends TTLockApi implements TTLock {
 
   private async onConnected(): Promise<void> {
     if (this.isPaired() && !this.skipDataRead) {
+      // If the lock is advertising as setting mode it has been factory-reset and our stored
+      // keys (aesKey, adminPs) are now stale.  Attempting COMM_CHECK_ADMIN would be silently
+      // ignored by the lock for ~15 s before we time out, so skip auth and let the manager
+      // treat this as an uninitialized lock that needs re-pairing.
+      if (this.device.isSettingMode) {
+        this.log.warn("Lock is in setting mode but we have stored keys — lock may have been reset. Skipping admin auth; re-initialization required.");
+        if (this.device.connected) {
+          this.connected = true;
+          this.emit("connected", this);
+        }
+        return;
+      }
       // read general data
       this.log.info("Connected to known lock, reading general data");
       try {
