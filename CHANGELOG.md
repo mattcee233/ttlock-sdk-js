@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.7
+- Fix pino v9 strict TypeScript overload errors: replace all `log.debug/error("label:", value)` and `log.debug("text %o", value)` patterns with template literals or structured `{ key: value }` objects across TTLock.ts, TTLockApi.ts, Command.ts, UnknownCommand.ts, OperationLogCommand.ts, NobleDescriptor.ts, NobleDevice.ts, NobleWebsocketBinding.ts
+- Fix syntax bug in TTLock.ts: missing closing parenthesis inside AES key template literal
+- Fix variable shadowing in OperationLogCommand.ts: local `log: LogEntry` loop variable renamed to `entry` to avoid collision with module-level pino logger
+
 ## 0.4.6
 - Replace all `console.log/error/warn` calls with [pino](https://github.com/pinojs/pino) structured logging
 - Added `src/util/logger.ts`: single pino logger with pino-pretty transport; exported from index as `logger`
