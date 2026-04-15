@@ -2,11 +2,11 @@
 
 The goal of this project is to make a partial JavaScript port of the TTLock Android SDK enough to make it work with the biometric locks.  
 
-> This is just an SDK providing the means to communicate with the locks, it is not an app providing the full functionality of the TTLock app. If you are looking for an implementation please see [ttlock-hass-integration](https://github.com/kind3r/hass-addons) Home Assistant Addon.  
+> This is just an SDK providing the means to communicate with the locks, it is not an app providing the full functionality of the TTLock app. If you are looking for an implementation please see [ttlock-hass-integration](https://github.com/mattcee233/ttlock-offline) Home Assistant Addon.  
 
 > Bluetooth implementation is using [@abandonware/noble](https://github.com/abandonware/noble) but other implementations are possible by extending [ScannerInterface](./src/scanner/ScannerInterface.ts)  
 
-Feeling generous and want to support my work, here is [my PayPal link](https://paypal.me/kind3r).  
+Feeling generous and want to support my work, here is [my PayPal link](https://paypal.me/mattcee233).  
 
 ## Requirements
 - node.js v12 or newer
@@ -47,7 +47,7 @@ Feeling generous and want to support my work, here is [my PayPal link](https://p
 
 ## Gateway option
 
-The websocket binding present in [@abandonware/noble](https://github.com/abandonware/noble) was extended with a simple authentication via AES key, user and password. This adds basic suport for using a bluetooth adapter on a remote host via a simple websocket connection. The end goal will be to run an ESP32 as a gateway ([development ongoing](https://github.com/kind3r/esp32-ble-gateway)) to extend the range of the device the SDK is running on, or maybe just use it on a device that does not even have a bluetooth adapter. A sample server is implemented in [tools/server.js](./tools/server.js). All examples in the SKD can be started in websocket mode by adding the following environment variables:
+The websocket binding present in [@abandonware/noble](https://github.com/abandonware/noble) was extended with a simple authentication via AES key, user and password. This adds basic suport for using a bluetooth adapter on a remote host via a simple websocket connection. The end goal will be to run an ESP32 as a gateway ([development ongoing](https://github.com/mattcee233/esp32-ble-gateway)) to extend the range of the device the SDK is running on, or maybe just use it on a device that does not even have a bluetooth adapter. A sample server is implemented in [tools/server.js](./tools/server.js). All examples in the SKD can be started in websocket mode by adding the following environment variables:
 - `WEBSOCKET_DEBUG=1` - debug websocket messages
 - `WEBSOCKET_ENABLE=1` - this will enable websocket support
 - `WEBSOCKET_HOST=127.0.0.1` - the IP or hostname of the host running the server

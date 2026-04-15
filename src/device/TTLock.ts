@@ -194,7 +194,7 @@ export class TTLock extends TTLockApi implements TTLock {
 
       // Calibrate time
       // this seems to fail on some locks
-      // see https://github.com/kind3r/hass-addons/issues/11
+      // see https://github.com/mattcee233/ttlock-offline/issues/11
       try {
         console.log("========= time");
         await this.calibrateTimeCommand(aesKey);
