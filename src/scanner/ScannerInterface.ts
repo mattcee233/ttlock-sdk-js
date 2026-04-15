@@ -3,7 +3,7 @@
 import { EventEmitter } from "events";
 import { DeviceInterface } from "./DeviceInterface";
 
-export type ScannerType = "noble" | "noble-websocket";
+export type ScannerType = "noble" | "gateway-websocket";
 
 export type ScannerOptions = {
   websocketHost?: string,

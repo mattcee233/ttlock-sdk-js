@@ -5,7 +5,6 @@ import { CodecUtils } from "../util/CodecUtils";
 import { LockType, LockVersion } from "../constant/Lock";
 import { AESUtil } from "../util/AESUtil";
 import { Command } from "./Command";
-import { commandFromData, commandFromType } from "./commandBuilder";
 
 const DEFAULT_HEADER = Buffer.from([0x7F, 0x5A]);
 
@@ -255,6 +254,7 @@ export class CommandEnvelope {
    */
   private generateCommand() {
     if (this.commandType != CommandType.COMM_UNSET && typeof this.command == "undefined") {
+      const { commandFromData, commandFromType } = require("./commandBuilder");
       // only generate if no command exists
       if (typeof this.data != "undefined") {
         if (this.data.length > 0 && typeof this.aesKey != "undefined") {

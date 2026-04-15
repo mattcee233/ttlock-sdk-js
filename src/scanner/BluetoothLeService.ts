@@ -5,7 +5,7 @@ import { ScannerInterface, ScannerOptions, ScannerType } from "./ScannerInterfac
 import { NobleScanner } from "./noble/NobleScanner";
 import { TTBluetoothDevice } from "../device/TTBluetoothDevice";
 import { DeviceInterface } from "./DeviceInterface";
-import { NobleScannerWebsocket } from "./noble/NobleScannerWebsocket";
+import { GatewayWebsocketScanner } from "./gateway/GatewayWebsocketScanner";
 
 export { ScannerType } from "./ScannerInterface";
 export const TTLockUUIDs: string[] = ["1910", "00001910-0000-1000-8000-00805f9b34fb"];
@@ -26,8 +26,8 @@ export class BluetoothLeService extends EventEmitter implements BluetoothLeServi
     this.btDevices = new Map();
     if (scannerType == "noble") {
       this.scanner = new NobleScanner(uuids);
-    } else if (scannerType == "noble-websocket") {
-      this.scanner = new NobleScannerWebsocket(uuids, 
+    } else if (scannerType == "gateway-websocket") {
+      this.scanner = new GatewayWebsocketScanner(uuids,
         scannerOptions.websocketHost, 
         scannerOptions.websocketPort,
         scannerOptions.websocketAesKey,

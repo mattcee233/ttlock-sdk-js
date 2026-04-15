@@ -1,7 +1,6 @@
 'use strict';
 
 import { ScannerInterface, ScannerStateType } from "../ScannerInterface";
-import nobleObj from "@abandonware/noble";
 import { EventEmitter } from "events";
 import { NobleDevice } from "./NobleDevice";
 
@@ -12,7 +11,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
   scannerState: ScannerStateType = "unknown";
   private nobleState: nobleStateType = "unknown";
   private devices: Map<string, NobleDevice> = new Map();
-  protected noble?: typeof nobleObj;
+  protected noble?: any;
 
   constructor(uuids: string[] = []) {
     super();
@@ -22,7 +21,13 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
   }
 
   protected createNoble() {
-    this.noble = nobleObj;
+    try {
+      this.noble = require("@stoprocent/noble");
+    } catch (error) {
+      this.noble = undefined;
+      this.nobleState = "unsupported";
+      console.warn("Noble backend unavailable. Use scannerType 'gateway-websocket' for BLE transport migration.");
+    }
   }
 
   protected initNoble() {
@@ -101,7 +106,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
     }
   }
 
-  protected async onNobleDiscover(peripheral: nobleObj.Peripheral): Promise<void> {
+  protected async onNobleDiscover(peripheral: any): Promise<void> {
     if (!this.devices.has(peripheral.id)) {
       const nobleDevice = new NobleDevice(peripheral);
       this.devices.set(peripheral.id, nobleDevice);
@@ -120,7 +125,7 @@ export class NobleScanner extends EventEmitter implements ScannerInterface {
     }
   }
 
-  protected checkPeripheralAdvertisement(peripheral: nobleObj.Peripheral): boolean {
+  protected checkPeripheralAdvertisement(peripheral: any): boolean {
     if (typeof this.uuids == "undefined" || this.uuids.length == 0) {
       return true;
     }

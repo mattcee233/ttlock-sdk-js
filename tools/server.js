@@ -6,7 +6,7 @@ const chalk = require('chalk');
 const aesKey = process.env.WEBSOCKET_KEY || "f8b55c272eb007f501560839be1f1e7e";
 const credentials = process.env.WEBSOCKET_CREDENTIALS || "admin:admin";
 
-var noble = require('@abandonware/noble');
+var noble = require('@stoprocent/noble');
 
 /** @type {WebSocket.Server} */
 var wss;

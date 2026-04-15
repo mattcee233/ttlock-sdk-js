@@ -1,0 +1,19 @@
+{
+  "aes": {
+    "plaintextHex": "534349454e4552",
+    "ciphertextHex": "26ed1d9258a1e428fcb48bbd1c0e5a46"
+  },
+  "codec": {
+    "payloadHex": "19010255",
+    "key": 68,
+    "encodedHex": "3c242770"
+  },
+  "envelope": {
+    "v3GetAesKeyHex": "7f5a0503010001000119aa1026ed1d9258a1e428fcb48bbd1c0e5a46bc"
+  },
+  "crc": {
+    "knownBadResponseHex": "7f5a0503020001000154aa102d2f9276f7eea8794974e465f0e99e18090d0a",
+    "knownBadExpectedCrc": 86,
+    "knownBadObservedCrc": 10
+  }
+}

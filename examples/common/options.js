@@ -12,7 +12,7 @@ module.exports = (lockData) => {
   };
 
   if (process.env.WEBSOCKET_ENABLE == "1") {
-    options.scannerType = "noble-websocket";
+    options.scannerType = "gateway-websocket";
     if (process.env.WEBSOCKET_HOST) {
       options.scannerOptions.websocketHost = process.env.WEBSOCKET_HOST;
     }

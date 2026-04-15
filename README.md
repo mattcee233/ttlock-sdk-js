@@ -4,13 +4,13 @@ The goal of this project is to make a partial JavaScript port of the TTLock Andr
 
 > This is just an SDK providing the means to communicate with the locks, it is not an app providing the full functionality of the TTLock app. If you are looking for an implementation please see [ttlock-hass-integration](https://github.com/mattcee233/ttlock-offline) Home Assistant Addon.  
 
-> Bluetooth implementation is using [@abandonware/noble](https://github.com/abandonware/noble) but other implementations are possible by extending [ScannerInterface](./src/scanner/ScannerInterface.ts)  
+> Bluetooth implementation supports local [@stoprocent/noble](https://github.com/stoprocent/noble) and a websocket gateway transport (`scannerType: "gateway-websocket"`) for migration away from local noble dependencies. Other implementations are possible by extending [ScannerInterface](./src/scanner/ScannerInterface.ts).  
 
 Feeling generous and want to support my work, here is [my PayPal link](https://paypal.me/mattcee233).  
 
 ## Requirements
 - node.js v12 or newer
-- a bluetooth adapter on any platform* that [@abandonware/noble](https://github.com/abandonware/noble#installation) works on
+- a bluetooth adapter on any platform* that [@stoprocent/noble](https://github.com/stoprocent/noble#installation) works on
 
 > *) It was tested on a Raspberry PI 3 running Debian and also under Home Assistant runing on an Intel NUC
 
@@ -47,7 +47,9 @@ Feeling generous and want to support my work, here is [my PayPal link](https://p
 
 ## Gateway option
 
-The websocket binding present in [@abandonware/noble](https://github.com/abandonware/noble) was extended with a simple authentication via AES key, user and password. This adds basic suport for using a bluetooth adapter on a remote host via a simple websocket connection. The end goal will be to run an ESP32 as a gateway ([development ongoing](https://github.com/mattcee233/esp32-ble-gateway)) to extend the range of the device the SDK is running on, or maybe just use it on a device that does not even have a bluetooth adapter. A sample server is implemented in [tools/server.js](./tools/server.js). All examples in the SKD can be started in websocket mode by adding the following environment variables:
+The websocket transport supports using a bluetooth adapter on a remote host via a websocket gateway with AES key, user and password authentication. This is the preferred path when migrating away from local noble dependencies. A sample server is implemented in [tools/server.js](./tools/server.js). The SDK can use this transport with `scannerType: "gateway-websocket"` and `scannerOptions` (`websocketHost`, `websocketPort`, `websocketAesKey`, `websocketUsername`, `websocketPassword`).
+
+All examples in the SDK can be started in websocket mode by adding the following environment variables (this maps to `scannerType: "gateway-websocket"`):
 - `WEBSOCKET_DEBUG=1` - debug websocket messages
 - `WEBSOCKET_ENABLE=1` - this will enable websocket support
 - `WEBSOCKET_HOST=127.0.0.1` - the IP or hostname of the host running the server
@@ -67,7 +69,7 @@ pi@raspberrypi:~/ttlock-sdk-js $ WEBSOCKET_ENABLE=1 WEBSOCKET_HOST=192.168.1.42 
 ## Sample usage of this SDK
 
 1. Clone the repo and install the dependencies `npm i`.
-2. Check the installation prerequisites for your OS on the [@abandonware/noble](https://github.com/abandonware/noble#installation) GitHub page. Make sure you also read the [Running without root/sudo (Linux-specific)](https://github.com/abandonware/noble#running-without-rootsudo-linux-specific) section for running without sudo.  
+2. Check the installation prerequisites for your OS on the [@stoprocent/noble](https://github.com/stoprocent/noble#installation) GitHub page. Make sure you also read the [Running without root/sudo (Linux-specific)](https://github.com/stoprocent/noble#running-without-rootsudo-linux-specific) section for running without sudo.  
 
 The code for the followinng examples are located in the [examples](./examples) folder.
 

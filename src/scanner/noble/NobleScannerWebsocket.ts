@@ -2,7 +2,6 @@
 
 import { NobleScanner } from "./NobleScanner";
 import { NobleWebsocketBinding } from "./NobleWebsocketBinding";
-const Noble = require("@abandonware/noble/with-bindings");
 
 export class NobleScannerWebsocket extends NobleScanner {
   private websocketAddress: string;
@@ -27,6 +26,7 @@ export class NobleScannerWebsocket extends NobleScanner {
   }
 
   protected createNobleWebsocket() {
+    const Noble = require("@stoprocent/noble/with-bindings");
     const binding = new NobleWebsocketBinding(this.websocketAddress, this.websocketPort, this.aesKey, this.username, this.password);
     this.noble = new Noble(binding);
   }

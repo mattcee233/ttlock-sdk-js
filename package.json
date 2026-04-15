@@ -8,7 +8,9 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "rm -rf ./dist && tsc",
+    "build": "node -e \"require('fs').rmSync('./dist',{recursive:true,force:true})\" && npx --yes --package typescript@4.0.5 tsc",
+    "test": "npx --yes tsx --test ./test/**/*.test.ts",
+    "test:protocol": "npm run test",
     "prepare": "npm run build",
     "init": "npm run build && node ./examples/init.js",
     "reset": "npm run build && node ./examples/reset.js",
@@ -70,11 +72,13 @@
     "typescript": "^4.0.5"
   },
   "dependencies": {
-    "@abandonware/noble": "^1.9.2-13",
     "chalk": "^4.1.0",
     "crypto-js": "^4.0.0",
     "moment": "^2.29.1",
     "reconnecting-websocket": "^4.4.0",
     "ws": "^7.4.2"
+  },
+  "optionalDependencies": {
+    "@stoprocent/noble": "^1.9.2-13"
   }
 }
